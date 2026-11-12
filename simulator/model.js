@@ -26,8 +26,20 @@ const ChokeModel = (() => {
     return a * (q * (1 / (1 - p.oef) - c) - (p.oef / (1 - p.oef)) * use);
   }
 
-  // Fourth-order Runge-Kutta with a fixed step. tOn, tOff and ramp must be
-  // whole multiples of dt so that no step straddles a jump in flow.
+  // One fourth-order Runge-Kutta step from time t0 to t0 + dt. tOn, tOff and
+  // ramp must be whole multiples of dt so that no step straddles a jump in flow.
+  function step(c, t0, dt, p, s) {
+    const eps = dt * 1e-6;
+    const q1 = flowFraction(t0 + eps, s);
+    const q2 = flowFraction(t0 + dt / 2, s);
+    const q4 = flowFraction(t0 + dt - eps, s);
+    const k1 = rate(c, q1, p);
+    const k2 = rate(c + (dt / 2) * k1, q2, p);
+    const k3 = rate(c + (dt / 2) * k2, q2, p);
+    const k4 = rate(c + dt * k3, q4, p);
+    return c + (dt / 6) * (k1 + 2 * k2 + 2 * k3 + k4);
+  }
+
   function simulate(p, s, tEnd, dt = 0.01) {
     const n = Math.round(tEnd / dt);
     const t = new Float64Array(n + 1);
@@ -35,17 +47,8 @@ const ChokeModel = (() => {
     const q = new Float64Array(n + 1);
     c[0] = 1;
     q[0] = flowFraction(0, s);
-    const eps = dt * 1e-6;
     for (let i = 0; i < n; i++) {
-      const t0 = i * dt;
-      const q1 = flowFraction(t0 + eps, s);
-      const q2 = flowFraction(t0 + dt / 2, s);
-      const q4 = flowFraction(t0 + dt - eps, s);
-      const k1 = rate(c[i], q1, p);
-      const k2 = rate(c[i] + (dt / 2) * k1, q2, p);
-      const k3 = rate(c[i] + (dt / 2) * k2, q2, p);
-      const k4 = rate(c[i] + dt * k3, q4, p);
-      c[i + 1] = c[i] + (dt / 6) * (k1 + 2 * k2 + 2 * k3 + k4);
+      c[i + 1] = step(c[i], i * dt, dt, p, s);
       t[i + 1] = (i + 1) * dt;
       q[i + 1] = flowFraction(t[i + 1], s);
     }
@@ -70,7 +73,7 @@ const ChokeModel = (() => {
     return { loc, recovery };
   }
 
-  return { flowFraction, rate, simulate, crossings };
+  return { flowFraction, rate, step, simulate, crossings };
 })();
 
 if (typeof module !== "undefined") module.exports = ChokeModel;

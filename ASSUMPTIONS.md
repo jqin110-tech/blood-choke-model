@@ -95,3 +95,23 @@ a mean and an SD, not a distribution, so the shapes are our choice.
   much individuals differ.
 - "Inside the observed range" means inside 6.3–12.2 s, the individual range
   read from Mitchell's Figure 6.
+
+**A13. The x-ray view splits the brain into two zones (illustration).** To
+show blood failing to reach part of the brain, `simulator/xray.html` runs the
+same equation twice: once for a "front" zone fed by the carotids and once for
+a "back" zone fed by the vertebrals, with no oxygen passing between them.
+- Flow left in the front zone is the mean middle cerebral artery velocity
+  fraction measured in S3 (0.185 for the officers who lost consciousness,
+  0.43 for those who did not). Flow in the back zone stays at 100 %, because
+  S3 judged vertebral compromise unlikely but could not measure it.
+- Both zones use the same per-volume physiology and the same fitted
+  threshold, and the model is called unconscious when the front zone crosses
+  it. S3 supports that loosely: its subjects lost consciousness with carotid
+  flow cut and vertebral flow believed intact.
+- This is reading A of A11 applied to the carotid-fed part of the brain only.
+  It is **not** used for any number in the results; stages 3 and 4 still use
+  the one-box model.
+- The drawing itself, the shape and position of the two zones, and the
+  moving dots are schematic. No opened source maps which brain regions each
+  artery supplies, and real brains share supply through connecting arteries.
+

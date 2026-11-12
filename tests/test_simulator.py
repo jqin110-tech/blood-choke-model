@@ -7,11 +7,13 @@ import shutil
 import subprocess
 from pathlib import Path
 
+import numpy as np
 import pytest
 
+from choke_model.analysis import choke_for_flow, loc_time
 from choke_model.model import Choke, simulate
 from choke_model.params import SECONDS_PER_MINUTE, Params
-from scripts.build_simulator import build_config, build_standalone
+from scripts.build_simulator import PAGES, build_config, build_standalone
 
 ROOT = Path(__file__).resolve().parents[1]
 MODEL_JS = ROOT / "simulator" / "model.js"
@@ -69,6 +71,43 @@ def test_config_values_come_from_the_model() -> None:
         assert 0 <= s["carotidCut"] <= 1 and 0 <= s["vertebralOpen"] <= 1 and s["hold"] > 0
 
 
-def test_built_page_is_up_to_date() -> None:
-    """simulator/index.html must be what build_simulator produces now."""
-    assert (ROOT / "simulator" / "index.html").read_text() == build_standalone()
+@pytest.mark.parametrize("template,page", list(PAGES.items()))
+def test_built_pages_are_up_to_date(template: str, page: str) -> None:
+    """Each page in simulator/ must be what build_simulator produces now."""
+    assert (ROOT / "simulator" / page).read_text() == build_standalone(template)
+
+
+XRAY_NODE_SCRIPT = """
+const M = require(process.argv[1]);
+const x = JSON.parse(process.argv[2]);
+const out = x.scenarios.map((sc) => {
+  // The same stepping the x-ray page does for the front of the brain.
+  const s = {carotidCut: 1 - sc.frontFlow, vertebralOpen: 1, vertebralShare: 0, tOn: 0, tOff: Infinity, ramp: x.rampS};
+  let c = 1, crossed = null;
+  for (let k = 0; k * 0.01 < x.maxHoldS; k++) {
+    const next = M.step(c, k * 0.01, 0.01, x.physiology, s);
+    if (crossed === null && c >= x.threshold && next < x.threshold) crossed = (k + 1) * 0.01;
+    c = next;
+  }
+  return {crossed, lowest: c};
+});
+console.log(JSON.stringify(out));
+"""
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
+def test_xray_zones_match_python() -> None:
+    """The front-of-brain zone in the x-ray view crosses when the Python model says."""
+    p = Params()
+    x = build_config()["xray"]
+    done = subprocess.run(["node", "-e", XRAY_NODE_SCRIPT, str(MODEL_JS), json.dumps(x)],
+                          capture_output=True, text=True, check=True)
+    lost, awake = json.loads(done.stdout)
+    for sc, js in zip(x["scenarios"], (lost, awake)):
+        expected = loc_time(p, choke_for_flow(p, sc["frontFlow"], x["rampS"]), x["threshold"], t_max=x["maxHoldS"])
+        if np.isnan(expected):
+            assert js["crossed"] is None
+            assert js["lowest"] > x["threshold"]
+        else:
+            assert js["crossed"] == pytest.approx(expected, abs=0.02)
+    assert lost["crossed"] is not None and awake["crossed"] is None

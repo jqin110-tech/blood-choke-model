@@ -17,7 +17,7 @@ from choke_model.model import Choke
 from choke_model.params import (
     FIXATION_BEFORE_LOC_S, MITCHELL_FIXATION_MEAN_S, MITCHELL_FIXATION_RANGE_S,
     MITCHELL_FIXATION_SD_S, MITCHELL_NO_LOC_HOLD_S, MITCHELL_TIME_TO_MIN_VELOCITY_S,
-    MITCHELL_VELOCITY_LEFT_NO_LOC, ROSSEN_LOC_S, ROSSEN_RECOVERY_S, SECONDS_PER_MINUTE, Params,
+    MITCHELL_VELOCITY_LEFT_LOC, MITCHELL_VELOCITY_LEFT_NO_LOC, ROSSEN_LOC_S, ROSSEN_RECOVERY_S, SECONDS_PER_MINUTE, Params,
 )
 from choke_model.uncertainty import INPUTS
 
@@ -35,8 +35,42 @@ def slider(name: str, central: float, digits: int) -> dict[str, float]:
     return {"value": round(central, digits), "min": round(low, digits), "max": round(high, digits)}
 
 
+# The x-ray view stops a hold just past the longest one in S3 (23.3 s).
+XRAY_MAX_HOLD_S = 25.0
+
+
+def xray_config(p: Params) -> dict:
+    """Numbers for the x-ray view: two zones, each run through the same equation (A13)."""
+    lost, awake = MITCHELL_VELOCITY_LEFT_LOC, MITCHELL_VELOCITY_LEFT_NO_LOC
+    return {
+        "threshold": round(central_threshold(p), 3),
+        "rampS": MITCHELL_TIME_TO_MIN_VELOCITY_S,
+        "maxHoldS": XRAY_MAX_HOLD_S,
+        "longestHoldS": MITCHELL_NO_LOC_HOLD_S,
+        "physiology": {"cbf": p.cbf * SECONDS_PER_MINUTE, "oef": p.oef, "cbv": p.cbv, "kappa": p.kappa},
+        "fixationMean": MITCHELL_FIXATION_MEAN_S,
+        "fixationSd": MITCHELL_FIXATION_SD_S,
+        "fixationBeforeLoc": FIXATION_BEFORE_LOC_S,
+        "rossenRecovery": ROSSEN_RECOVERY_S,
+        "scenarios": [
+            {"id": "lost", "name": "Full compression: the 16 officers who lost consciousness",
+             "frontFlow": round(sum(MITCHELL_VELOCITY_LEFT_LOC) / 2, 3), "backFlow": 1.0,
+             "intro": f"In these officers, blood velocity in the brain's arteries fell to {lost[0]:.0%} and "
+                      f"{lost[1]:.0%} of normal on the two sides (Mitchell 2012). Press the button to see "
+                      "what the model predicts.",
+             "outcome": "Measured: these officers lost consciousness."},
+            {"id": "awake", "name": "Partial compression: the 4 officers who stayed conscious",
+             "frontFlow": round(sum(MITCHELL_VELOCITY_LEFT_NO_LOC) / 2, 3), "backFlow": 1.0,
+             "intro": f"In these officers, blood velocity only fell to {awake[0]:.0%} and {awake[1]:.0%} of "
+                      "normal on the two sides (Mitchell 2012). Press the button to see what the model predicts.",
+             "outcome": "Measured: these officers were still conscious when the hold ended at about 23 s "
+                        "(Mitchell 2012)."},
+        ],
+    }
+
+
 def build_config() -> dict:
-    """Everything the page needs, computed from the Python model."""
+    """Everything the pages need, computed from the Python model."""
     p = Params()
     corners = rossen_threshold_corners(p)
     no_loc_flow = sum(MITCHELL_VELOCITY_LEFT_NO_LOC) / 2
@@ -50,6 +84,7 @@ def build_config() -> dict:
             "vertebralShare": slider("vertebral_share", p.vertebral_share, 2),
             "kappa": slider("kappa", p.kappa, 2),
         },
+        "xray": xray_config(p),
         "threshold": {
             "value": round(central_threshold(p), 3),
             "min": round(min(corners.values()), 3),
@@ -89,30 +124,35 @@ def build_config() -> dict:
     }
 
 
-def build_fragment() -> str:
+# Each page: template in simulator/ -> standalone page in simulator/.
+PAGES = {"template.html": "index.html", "xray_template.html": "xray.html"}
+
+
+def build_fragment(template: str = "template.html") -> str:
     """The page body with the model and the config inlined."""
-    page = (SIM / "template.html").read_text()
+    page = (SIM / template).read_text()
     page = page.replace("/*__MODEL__*/", (SIM / "model.js").read_text())
     return page.replace("/*__CONFIG__*/", json.dumps(build_config(), indent=2))
 
 
-def build_standalone() -> str:
+def build_standalone(template: str = "template.html") -> str:
     """A complete HTML document around the fragment, for opening locally."""
     return ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
             '<meta name="viewport" content="width=device-width, initial-scale=1">\n</head>\n<body>\n'
-            + build_fragment() + "\n</body>\n</html>\n")
+            + build_fragment(template) + "\n</body>\n</html>\n")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--fragment", type=Path, help="also write the page without the document wrapper")
+    parser.add_argument("--fragments", type=Path, help="also write each page without the document wrapper here")
     args = parser.parse_args()
-    (SIM / "index.html").write_text(build_standalone())
-    print(f"wrote {SIM / 'index.html'}")
-    if args.fragment:
-        args.fragment.parent.mkdir(parents=True, exist_ok=True)
-        args.fragment.write_text(build_fragment())
-        print(f"wrote {args.fragment}")
+    for template, page in PAGES.items():
+        (SIM / page).write_text(build_standalone(template))
+        print(f"wrote {SIM / page}")
+        if args.fragments:
+            args.fragments.mkdir(parents=True, exist_ok=True)
+            (args.fragments / page).write_text(build_fragment(template))
+            print(f"wrote {args.fragments / page}")
 
 
 if __name__ == "__main__":

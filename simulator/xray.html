@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<title>Blood Choke X-Ray</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one dark radiograph. The x-ray fills the left, a narrow readout
+   column sits on the right; stacked on a phone. Single dark look on purpose. */
+:root {
+  color-scheme: dark;
+  --bg: #05090d;
+  --panel: #0c1319;
+  --ink: #e6eef5;
+  --muted: #8fa1b1;
+  --line: #1d2a35;
+  --bone: #bcd6ea;
+  --blood: #ff4d4d;
+  --off: #5b7186;
+  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-block: 20px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+h1 { font-family: var(--font-display); font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+h2 { font-family: var(--font-display); font-size: 14px; font-weight: 600; margin: 0; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 68ch; }
+.notice { border-left: 3px solid var(--blood); padding: 8px 12px; background: var(--panel); max-width: 82ch; font-size: 14px; }
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 18px; align-items: start; }
+.scan { background: #000; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+canvas { display: block; width: 100%; height: auto; }
+.side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.clock { font-family: var(--font-display); font-size: 44px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
+.clock-label { font-size: 13px; color: var(--muted); }
+.state { font-weight: 600; display: flex; gap: 8px; align-items: center; }
+.state .dot { width: 10px; height: 10px; border-radius: 50%; background: #ffb07a; flex: none; }
+.state.off .dot { background: var(--off); }
+.rows { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; font-size: 14px; }
+.rows span:nth-child(odd) { color: var(--muted); }
+.rows span:nth-child(even) { font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; }
+button {
+  font: inherit; font-weight: 600; color: var(--ink); background: var(--panel); border: 1px solid var(--line);
+  border-radius: 6px; padding: 11px 12px; cursor: pointer; width: 100%;
+}
+button:hover { border-color: var(--muted); }
+button.primary { background: var(--blood); border-color: var(--blood); color: #fff; }
+button.primary.release { background: #e6eef5; border-color: #e6eef5; color: #05090d; }
+:focus-visible { outline: 2px solid #7fb6ff; outline-offset: 2px; }
+fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+legend { padding: 0; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+.choice { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; }
+.choice input { margin-top: 4px; accent-color: var(--blood); }
+.log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 13.5px; }
+.log li { border-left: 2px solid var(--line); padding-left: 10px; }
+.log .t { font-variant-numeric: tabular-nums; font-weight: 600; }
+.log .measured { color: var(--muted); display: block; }
+.notes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.notes ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--muted); }
+.notes strong { color: var(--ink); font-weight: 600; }
+@media (max-width: 860px) {
+  .stage { grid-template-columns: minmax(0, 1fr); }
+  .side { display: contents; }
+  #panel-run { order: 1; }
+  .scan { order: 2; }
+  .side > .panel:not(#panel-run) { order: 3; }
+  #panel-run { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; }
+  #panel-run .state { justify-self: end; }
+  #reset { padding: 8px 12px; }
+  .notes { grid-template-columns: minmax(0, 1fr); }
+  .clock { font-size: 36px; }
+}
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <h1>Blood Choke X-Ray</h1>
+    <p class="lede">What the model says happens inside the head when the carotid arteries are squeezed shut: blood stops reaching the front of the brain, its oxygen runs down in seconds, and it drops below the level the model treats as consciousness.</p>
+    <p class="notice"><strong>Educational model only.</strong> Not medical advice, and not for safety or training decisions. The drawing is a schematic, not a real scan, and it shows physiology, not technique.</p>
+  </header>
+
+  <div class="stage">
+    <div class="scan"><canvas id="scan" width="800" height="900" role="img" aria-label="Schematic x-ray of a head and neck showing blood flow to the brain"></canvas></div>
+
+    <div class="side">
+      <section class="panel" id="panel-run">
+        <div>
+          <div class="clock" id="clock">0.0 s</div>
+          <div class="clock-label" id="clock-label">Normal blood flow</div>
+        </div>
+        <div class="state" id="state"><span class="dot"></span><span id="state-text"></span></div>
+        <button type="button" class="primary" id="action">Compress the carotid arteries</button>
+        <button type="button" id="reset">Reset</button>
+      </section>
+
+      <section class="panel">
+        <fieldset>
+          <legend>Which measured case to show</legend>
+          <div id="choices"></div>
+        </fieldset>
+      </section>
+
+      <section class="panel">
+        <h2>Right now</h2>
+        <div class="rows">
+          <span>Carotid flow to the front</span><span id="v-qa"></span>
+          <span>Vertebral flow to the back</span><span id="v-qp"></span>
+          <span>Oxygen, front of brain</span><span id="v-ca"></span>
+          <span>Oxygen, back of brain</span><span id="v-cp"></span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>What happened</h2>
+        <ul class="log" id="log"></ul>
+      </section>
+    </div>
+  </div>
+
+  <div class="notes">
+    <section class="panel">
+      <h2>What is computed</h2>
+      <ul>
+        <li><strong>The timing and the oxygen levels.</strong> They come from the same equation as the repo's Python model, run once for the front of the brain and once for the back.</li>
+        <li><strong>How far the flow drops.</strong> It is the blood velocity measured in the brain's arteries during neck restraint (Mitchell 2012).</li>
+        <li><strong>The threshold.</strong> It is fitted to 1943 data, not measured, and it is the weakest part of the model.</li>
+      </ul>
+    </section>
+    <section class="panel">
+      <h2>What is illustration only</h2>
+      <ul>
+        <li><strong>The anatomy.</strong> It is a hand-drawn schematic, not to scale. The left and right arteries overlap in this side view.</li>
+        <li><strong>Which parts go dark.</strong> The brain is split into just two zones, a front fed by the carotids and a back fed by the vertebrals. Real brains share supply through connecting arteries, and the model cannot say which exact regions fail first.</li>
+        <li><strong>The moving dots.</strong> Their speed shows more or less flow. It is not a real blood speed.</li>
+        <li><strong>Waking up.</strong> The model recovers faster than people do, and that part has not been checked yet.</li>
+      </ul>
+    </section>
+  </div>
+</div>
+
+<script>
+const CONFIG = {
+  "physiology": {
+    "cbf": {
+      "value": 44.4,
+      "min": 31.4,
+      "max": 57.4
+    },
+    "oef": {
+      "value": 0.44,
+      "min": 0.32,
+      "max": 0.56
+    },
+    "cbv": {
+      "value": 3.8,
+      "min": 2.4,
+      "max": 5.2
+    },
+    "vertebralShare": {
+      "value": 0.28,
+      "min": 0.2,
+      "max": 0.36
+    },
+    "kappa": {
+      "value": 0.1,
+      "min": 0.01,
+      "max": 0.5
+    }
+  },
+  "xray": {
+    "threshold": 0.241,
+    "rampS": 1.6,
+    "maxHoldS": 25.0,
+    "longestHoldS": 23.3,
+    "physiology": {
+      "cbf": 44.4,
+      "oef": 0.44,
+      "cbv": 3.8,
+      "kappa": 0.1
+    },
+    "fixationMean": 9.5,
+    "fixationSd": 1.6,
+    "fixationBeforeLoc": [
+      0.5,
+      1.0
+    ],
+    "rossenRecovery": [
+      3.0,
+      11.5
+    ],
+    "scenarios": [
+      {
+        "id": "lost",
+        "name": "Full compression: the 16 officers who lost consciousness",
+        "frontFlow": 0.185,
+        "backFlow": 1.0,
+        "intro": "In these officers, blood velocity in the brain's arteries fell to 17% and 20% of normal on the two sides (Mitchell 2012). Press the button to see what the model predicts.",
+        "outcome": "Measured: these officers lost consciousness."
+      },
+      {
+        "id": "awake",
+        "name": "Partial compression: the 4 officers who stayed conscious",
+        "frontFlow": 0.43,
+        "backFlow": 1.0,
+        "intro": "In these officers, blood velocity only fell to 26% and 60% of normal on the two sides (Mitchell 2012). Press the button to see what the model predicts.",
+        "outcome": "Measured: these officers were still conscious when the hold ended at about 23 s (Mitchell 2012)."
+      }
+    ]
+  },
+  "threshold": {
+    "value": 0.241,
+    "min": 0.001,
+    "max": 0.618
+  },
+  "observed": {
+    "rossenLoc": [
+      4.0,
+      10.0
+    ],
+    "rossenRecovery": [
+      3.0,
+      11.5
+    ],
+    "mitchellFixationMean": 9.5,
+    "mitchellFixationSd": 1.6,
+    "mitchellFixationRange": [
+      6.3,
+      12.2
+    ],
+    "fixationBeforeLoc": [
+      0.5,
+      1.0
+    ]
+  },
+  "scenarios": [
+    {
+      "id": "carotid",
+      "name": "Carotids shut, vertebrals open",
+      "note": "Both carotids fully closed and the vertebral arteries untouched (assumption A4). Hold time is illustrative.",
+      "carotidCut": 1.0,
+      "vertebralOpen": 1.0,
+      "ramp": 0.0,
+      "hold": 15.0
+    },
+    {
+      "id": "rossen",
+      "name": "Rossen 1943 neck cuff",
+      "note": "Cuff at 600 mmHg. How much vertebral flow it left is unknown, so half is assumed. Hold time is illustrative.",
+      "carotidCut": 1.0,
+      "vertebralOpen": 0.5,
+      "ramp": 0.0,
+      "hold": 10.0
+    },
+    {
+      "id": "mitchell-loc",
+      "name": "Mitchell 2012, lost consciousness",
+      "note": "Reading B: carotids shut, vertebrals normal. The real hold ended 1 to 2 s after eye fixation, at about 11.0 s. The model would cross at 11.3 s, so it runs a little late here.",
+      "carotidCut": 1.0,
+      "vertebralOpen": 1.0,
+      "ramp": 1.6,
+      "hold": 11.0
+    },
+    {
+      "id": "mitchell-awake",
+      "name": "Mitchell 2012, stayed conscious",
+      "note": "Reading A: whole-brain flow falls like the measured velocity in the four officers who did not lose consciousness.",
+      "carotidCut": 0.79,
+      "vertebralOpen": 1.0,
+      "ramp": 1.6,
+      "hold": 23.3
+    }
+  ]
+};
+// Browser port of choke_model/model.py. No page code in here, so it can be
+// tested from Node against the Python model (tests/test_simulator.py).
+//
+// The equation is the same one, divided through by the baseline oxygen C0:
+//
+//   dc/dt = a * [ q(t) * (1 / (1 - E) - c)  -  E / (1 - E) * m(c) ]
+//
+// c = C / C0, a = CBF / CBV (per second), E = OEF, q(t) = fraction of normal
+// blood flow, m(c) = (1 + kappa) * c / (kappa + c).
+const ChokeModel = (() => {
+  "use strict";
+
+  // Fraction of normal brain blood flow at time t (seconds).
+  function flowFraction(t, s) {
+    if (t < s.tOn || t >= s.tOff) return 1;
+    const v = s.vertebralShare;
+    const held = (1 - v) * (1 - s.carotidCut) + v * s.vertebralOpen;
+    const sinceOn = t - s.tOn;
+    return sinceOn < s.ramp ? 1 + (held - 1) * (sinceOn / s.ramp) : held;
+  }
+
+  function rate(c, q, p) {
+    const cc = Math.max(c, 0);
+    const use = ((1 + p.kappa) * cc) / (p.kappa + cc);
+    const a = p.cbf / 60 / p.cbv;
+    return a * (q * (1 / (1 - p.oef) - c) - (p.oef / (1 - p.oef)) * use);
+  }
+
+  // One fourth-order Runge-Kutta step from time t0 to t0 + dt. tOn, tOff and
+  // ramp must be whole multiples of dt so that no step straddles a jump in flow.
+  function step(c, t0, dt, p, s) {
+    const eps = dt * 1e-6;
+    const q1 = flowFraction(t0 + eps, s);
+    const q2 = flowFraction(t0 + dt / 2, s);
+    const q4 = flowFraction(t0 + dt - eps, s);
+    const k1 = rate(c, q1, p);
+    const k2 = rate(c + (dt / 2) * k1, q2, p);
+    const k3 = rate(c + (dt / 2) * k2, q2, p);
+    const k4 = rate(c + dt * k3, q4, p);
+    return c + (dt / 6) * (k1 + 2 * k2 + 2 * k3 + k4);
+  }
+
+  function simulate(p, s, tEnd, dt = 0.01) {
+    const n = Math.round(tEnd / dt);
+    const t = new Float64Array(n + 1);
+    const c = new Float64Array(n + 1);
+    const q = new Float64Array(n + 1);
+    c[0] = 1;
+    q[0] = flowFraction(0, s);
+    for (let i = 0; i < n; i++) {
+      c[i + 1] = step(c[i], i * dt, dt, p, s);
+      t[i + 1] = (i + 1) * dt;
+      q[i + 1] = flowFraction(t[i + 1], s);
+    }
+    return { t, c, q };
+  }
+
+  // First time c falls below the threshold, and the first time it rises back.
+  function crossings(run, threshold) {
+    const { t, c } = run;
+    let loc = null;
+    let recovery = null;
+    for (let i = 1; i < c.length; i++) {
+      const before = c[i - 1] - threshold;
+      const after = c[i] - threshold;
+      if (loc === null && before >= 0 && after < 0) {
+        loc = t[i - 1] + ((t[i] - t[i - 1]) * before) / (before - after);
+      } else if (loc !== null && before < 0 && after >= 0) {
+        recovery = t[i - 1] + ((t[i] - t[i - 1]) * before) / (before - after);
+        break;
+      }
+    }
+    return { loc, recovery };
+  }
+
+  return { flowFraction, rate, step, simulate, crossings };
+})();
+
+if (typeof module !== "undefined") module.exports = ChokeModel;
+
+(() => {
+  "use strict";
+  const X = CONFIG.xray, DT = 0.01;
+  const $ = (id) => document.getElementById(id);
+  const pct = (x) => Math.round(100 * x) + "%";
+  const canvas = $("scan"), ctx = canvas.getContext("2d");
+  const VW = 800, VH = 900;
+  let NARROW = false, K = 1;
+  const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---- model state --------------------------------------------------------
+  // The same equation runs twice: once for the carotid-fed front of the
+  // brain and once for the vertebral-fed back (assumption A13).
+  let scenario = X.scenarios[0];
+  let phase = "idle";            // idle | held | released
+  let steps = 0;                 // model steps of DT since compression began
+  let front = 1, back = 1;       // oxygen, fraction of baseline
+  let zones = null, crossedAt = null, recoveredAt = null, releasedAt = null, lowest = 1;
+  let log = [];
+
+  function zone(flowLeft) {
+    return { carotidCut: 1 - flowLeft, vertebralOpen: 1, vertebralShare: 0, tOn: 0, tOff: Infinity, ramp: X.rampS };
+  }
+
+  function resetRun() {
+    phase = "idle"; steps = 0; front = 1; back = 1; lowest = 1;
+    crossedAt = recoveredAt = releasedAt = null;
+    zones = { front: zone(scenario.frontFlow), back: zone(scenario.backFlow) };
+    log = [];
+    renderSide();
+  }
+
+  function flows() {
+    if (phase === "idle") return { front: 1, back: 1 };
+    const t = steps * DT;
+    return { front: ChokeModel.flowFraction(t, zones.front), back: ChokeModel.flowFraction(t, zones.back) };
+  }
+
+  function addLog(t, text, measured) { log.push({ t, text, measured }); }
+
+  function release(auto) {
+    if (phase !== "held") return;
+    phase = "released";
+    releasedAt = steps * DT;
+    zones.front.tOff = zones.back.tOff = releasedAt;
+    addLog(releasedAt, auto ? `Released automatically. The longest hold in the data was about ${X.longestHoldS.toFixed(0)} s.` : "Released. Blood flow returns.",
+      crossedAt === null ? null : `Measured: awake again ${X.rossenRecovery[0]} to ${X.rossenRecovery[1]} s after release (Rossen 1943).`);
+  }
+
+  function advance(seconds) {
+    let n = Math.round(seconds / DT);
+    while (n-- > 0 && (phase === "held" || phase === "released")) {
+      const t = steps * DT;
+      const before = front;
+      front = ChokeModel.step(front, t, DT, X.physiology, zones.front);
+      back = ChokeModel.step(back, t, DT, X.physiology, zones.back);
+      steps++;
+      const now = steps * DT;
+      lowest = Math.min(lowest, front);
+      if (phase === "held" && Math.abs(now - X.rampS) < DT / 2) {
+        addLog(now, `Flow to the front of the brain is down to ${pct(scenario.frontFlow)} of normal.`, "Measured: blood velocity took about " + X.rampS + " s to reach its lowest (Mitchell 2012).");
+      }
+      if (crossedAt === null && before >= X.threshold && front < X.threshold) {
+        crossedAt = now;
+        addLog(now, "The front of the brain drops below the model's threshold. Model: unconscious.",
+          `Measured: eyes fixed at ${X.fixationMean} ± ${X.fixationSd.toFixed(1)} s, about ${X.fixationBeforeLoc[0]} to ${X.fixationBeforeLoc[1]} s before unconsciousness (Mitchell 2012).`);
+      }
+      if (crossedAt !== null && recoveredAt === null && before < X.threshold && front >= X.threshold) {
+        recoveredAt = now;
+        addLog(now, `Back above the threshold ${(now - releasedAt).toFixed(1)} s after release. Model: conscious again.`,
+          "The model recovers faster than the measured times. This part is unchecked.");
+      }
+      if (phase === "held" && now >= X.maxHoldS) {
+        if (crossedAt === null) addLog(now, `Still above the threshold. Lowest oxygen in the front of the brain: ${pct(lowest)}.`, scenario.outcome);
+        release(true);
+      }
+      if (phase === "released" && now - releasedAt > 12) { phase = "done"; break; }
+    }
+  }
+
+  // ---- side panel -----------------------------------------------------------
+  function renderSide() {
+    const t = steps * DT, q = flows();
+    $("clock").textContent = t.toFixed(1) + " s";
+    $("clock-label").textContent = phase === "idle" ? "Normal blood flow"
+      : phase === "held" ? "since the carotid arteries were compressed"
+      : "since compression began (released at " + releasedAt.toFixed(1) + " s)";
+    const off = front < X.threshold;
+    $("state").classList.toggle("off", off);
+    $("state-text").textContent = off ? "Model: unconscious" : "Model: conscious";
+    $("v-qa").textContent = pct(q.front);
+    $("v-qp").textContent = pct(q.back);
+    $("v-ca").textContent = pct(front);
+    $("v-cp").textContent = pct(back);
+    const action = $("action");
+    action.textContent = phase === "held" ? "Release" : phase === "idle" ? "Compress the carotid arteries" : "Run it again";
+    action.classList.toggle("release", phase === "held");
+    $("log").innerHTML = log.length
+      ? log.map((e) => `<li><span class="t">${e.t.toFixed(1)} s</span> ${e.text}${e.measured ? `<span class="measured">${e.measured}</span>` : ""}</li>`).join("")
+      : `<li>${scenario.intro}</li>`;
+  }
+
+  $("choices").innerHTML = X.scenarios.map((s, i) =>
+    `<label class="choice"><input type="radio" name="scenario" id="scenario-${s.id}" value="${s.id}"${i === 0 ? " checked" : ""}><span>${s.name}</span></label>`).join("");
+  for (const input of document.querySelectorAll('input[name="scenario"]')) {
+    input.addEventListener("change", () => { scenario = X.scenarios.find((s) => s.id === input.value); resetRun(); });
+  }
+  $("action").addEventListener("click", () => {
+    if (phase === "idle") { phase = "held"; addLog(0, "Carotid arteries compressed. The vertebral arteries stay open.", null); }
+    else if (phase === "held") release(false);
+    else { resetRun(); phase = "held"; addLog(0, "Carotid arteries compressed. The vertebral arteries stay open.", null); }
+    renderSide();
+  });
+  $("reset").addEventListener("click", resetRun);
+
+  // ---- drawing helpers ------------------------------------------------------
+  // Smooth curve through points (Catmull-Rom), returned as a dense polyline.
+  function spline(pts, closed, per = 14) {
+    const out = [], n = pts.length;
+    const at = (i) => closed ? pts[(i + n) % n] : pts[Math.max(0, Math.min(n - 1, i))];
+    const segs = closed ? n : n - 1;
+    for (let i = 0; i < segs; i++) {
+      const p0 = at(i - 1), p1 = at(i), p2 = at(i + 1), p3 = at(i + 2);
+      for (let k = 0; k < per; k++) {
+        const u = k / per, u2 = u * u, u3 = u2 * u;
+        out.push([
+          0.5 * (2 * p1[0] + (p2[0] - p0[0]) * u + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * u2 + (3 * p1[0] - p0[0] - 3 * p2[0] + p3[0]) * u3),
+          0.5 * (2 * p1[1] + (p2[1] - p0[1]) * u + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * u2 + (3 * p1[1] - p0[1] - 3 * p2[1] + p3[1]) * u3),
+        ]);
+      }
+    }
+    if (!closed) out.push(pts[n - 1]);
+    return out;
+  }
+  function trace(poly, closed) {
+    ctx.beginPath();
+    poly.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
+    if (closed) ctx.closePath();
+  }
+  function measure(poly) {
+    const d = [0];
+    for (let i = 1; i < poly.length; i++) d.push(d[i - 1] + Math.hypot(poly[i][0] - poly[i - 1][0], poly[i][1] - poly[i - 1][1]));
+    return d;
+  }
+  function pointAt(vessel, dist) {
+    const d = vessel.d;
+    let lo = 0, hi = d.length - 1;
+    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (d[mid] <= dist) lo = mid; else hi = mid; }
+    const f = (dist - d[lo]) / (d[hi] - d[lo] || 1), a = vessel.poly[lo], b = vessel.poly[hi];
+    return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+  }
+  const mix = (a, b, f) => a.map((v, i) => Math.round(v + (b[i] - v) * f));
+  const rgb = (c, alpha = 1) => `rgba(${c[0]},${c[1]},${c[2]},${alpha})`;
+
+  // ---- anatomy (schematic, side view facing left) ---------------------------
+  const HEAD = new Path2D("M250 330 C250 200 340 108 452 108 C592 108 676 218 676 350 C676 452 634 520 586 560 C566 600 566 700 574 900 L330 900 C336 810 332 745 322 702 C300 692 252 692 216 682 C190 672 186 642 200 622 C194 607 190 596 198 586 C186 576 186 561 200 556 C190 546 181 536 186 521 C152 516 141 500 160 480 C186 440 215 400 226 380 C240 360 250 346 250 330 Z");
+  const SKULL = spline([[262, 338], [282, 236], [352, 152], [452, 122], [552, 132], [630, 190], [664, 282], [664, 378], [636, 462], [596, 532], [540, 566], [470, 552], [400, 528], [330, 494], [284, 446], [264, 396]], true);
+  const JAW = spline([[370, 522], [390, 544], [386, 628], [360, 668], [300, 678], [234, 674], [212, 652], [236, 638], [300, 642], [342, 628], [354, 562], [350, 530]], true);
+  const CEREBRUM = spline([[286, 342], [302, 252], [362, 172], [452, 142], [540, 152], [608, 202], [642, 282], [642, 360], [614, 428], [560, 452], [500, 446], [442, 462], [384, 468], [324, 440], [290, 392]], true);
+  const CEREBELLUM = spline([[536, 470], [590, 462], [628, 486], [622, 524], [584, 544], [546, 530], [526, 500]], true);
+  const BRAINSTEM = spline([[452, 458], [498, 462], [504, 520], [506, 600], [482, 600], [472, 530]], true);
+  const SULCI = [
+    [[330, 300], [372, 262], [420, 250], [452, 214]], [[352, 400], [402, 372], [452, 380], [498, 346]],
+    [[424, 190], [462, 232], [452, 292], [486, 322]], [[516, 190], [530, 242], [572, 262], [580, 312]],
+    [[322, 362], [362, 342], [392, 310]], [[540, 392], [582, 372], [612, 330]], [[392, 432], [446, 424], [490, 410]],
+    [[488, 262], [520, 300], [512, 350]], [[572, 216], [606, 260], [622, 300]],
+  ].map((p) => spline(p, false));
+  const SPINE = Array.from({ length: 7 }, (_, i) => ({ x: 484 + i * 6, y: 606 + i * 42 }));
+
+  const vessel = (zone, width, pts) => { const poly = spline(pts, false); const d = measure(poly); return { zone, width, poly, d, length: d[d.length - 1] }; };
+  const VESSELS = [
+    vessel("front", 7, [[396, 900], [398, 810], [400, 730], [408, 650], [424, 580], [430, 525], [418, 484], [400, 458]]),
+    vessel("front", 4, [[400, 458], [352, 432], [312, 382], [302, 312], [332, 242], [392, 194], [462, 174]]),
+    vessel("front", 4, [[400, 458], [420, 412], [440, 352], [470, 292], [522, 242]]),
+    vessel("front", 4, [[400, 458], [442, 432], [492, 402], [532, 362], [552, 302]]),
+    vessel("front", 3, [[440, 352], [402, 322], [372, 282]]),
+    vessel("front", 3, [[470, 292], [452, 242], [470, 200]]),
+    vessel("back", 5, [[524, 900], [514, 810], [502, 730], [494, 660], [486, 600], [478, 545], [474, 505], [470, 472], [468, 452]]),
+    vessel("back", 4, [[468, 452], [512, 440], [562, 422], [606, 382], [626, 322]]),
+    vessel("back", 3, [[474, 505], [520, 500], [566, 506], [602, 496]]),
+    vessel("back", 3, [[562, 422], [590, 438], [612, 420]]),
+  ];
+  // Fixed dots along each vessel; they are shifted by a phase that grows with flow.
+  const SPACING = 26;
+  for (const v of VESSELS) v.phase = Math.random() * SPACING;
+  const PINCH = { x: 400, y: 742 };  // where the carotid is drawn narrowed
+
+  const WARM = [255, 176, 122], COLD = [44, 60, 82], DARK = [16, 24, 34];
+  function tissue(c) {
+    // Fully warm at baseline, fully cold as the threshold is reached.
+    const lit = Math.max(0, Math.min(1, (c - X.threshold) / (1 - X.threshold)));
+    const base = mix(COLD, WARM, lit);
+    return c < X.threshold ? mix(DARK, COLD, 0.45) : base;
+  }
+
+  function drawBrain() {
+    const offFront = front < X.threshold, offBack = back < X.threshold;
+    const cf = tissue(front), cb = tissue(back);
+    // Back zone parts.
+    for (const shape of [BRAINSTEM, CEREBELLUM]) {
+      trace(shape, true);
+      ctx.fillStyle = rgb(cb, 0.9); ctx.shadowColor = rgb(cb, 0.8); ctx.shadowBlur = offBack ? 0 : 22 * back; ctx.fill();
+      ctx.shadowBlur = 0; ctx.strokeStyle = rgb([230, 240, 250], 0.35); ctx.lineWidth = 1.2; ctx.stroke();
+    }
+    // Cerebrum: front colour, blending into the back colour toward the rear.
+    trace(CEREBRUM, true);
+    const g = ctx.createLinearGradient(500, 0, 600, 0);
+    g.addColorStop(0, rgb(cf, 0.92)); g.addColorStop(1, rgb(cb, 0.92));
+    ctx.fillStyle = g; ctx.shadowColor = rgb(cf, 0.9); ctx.shadowBlur = offFront ? 0 : 34 * front; ctx.fill();
+    ctx.shadowBlur = 0; ctx.strokeStyle = rgb([230, 240, 250], offFront ? 0.25 : 0.45); ctx.lineWidth = 1.4; ctx.stroke();
+    ctx.save(); trace(CEREBRUM, true); ctx.clip();
+    ctx.lineWidth = 1.6; ctx.strokeStyle = offFront ? "rgba(140,165,190,0.16)" : "rgba(90,40,30,0.30)";
+    for (const s of SULCI) { trace(s, false); ctx.stroke(); }
+    ctx.restore();
+    if (offFront) {
+      const text = NARROW ? "below threshold" : "below the model's threshold";
+      ctx.font = `600 ${17 * K}px Inter, system-ui, sans-serif`; ctx.textAlign = "center";
+      const w = ctx.measureText(text).width + 24 * K;
+      ctx.fillStyle = "rgba(5,9,13,0.82)"; ctx.beginPath(); ctx.roundRect(410 - w / 2, 300 - 13 * K, w, 34 * K, 8); ctx.fill();
+      ctx.fillStyle = "rgba(230,238,245,0.95)"; ctx.fillText(text, 410, 300 + 10 * K);
+    }
+  }
+
+  function drawVessels(q, progress) {
+    for (const v of VESSELS) {
+      const f = q[v.zone];
+      const col = mix([96, 34, 40], [255, 77, 77], Math.pow(f, 0.6));
+      trace(v.poly, false);
+      ctx.lineCap = "round"; ctx.lineJoin = "round";
+      ctx.strokeStyle = rgb(col, 0.9); ctx.lineWidth = v.width; ctx.shadowColor = rgb(col, 0.9); ctx.shadowBlur = 4 + 12 * f; ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = rgb([255, 222, 210], 0.25 + 0.7 * f);
+      for (let s = v.phase % SPACING; s < v.length; s += SPACING) {
+        const p = pointAt(v, s);
+        ctx.beginPath(); ctx.arc(p[0], p[1], Math.max(1.4, v.width * 0.32), 0, 6.283); ctx.fill();
+      }
+    }
+    // The compression: the carotid drawn narrowed, with two pads closing on it.
+    if (progress > 0) {
+      const squeeze = progress * (1 - scenario.frontFlow);
+      const edge = 3.5 - 2.8 * squeeze;          // half-width of artery left visible
+      ctx.strokeStyle = "#070d13"; ctx.lineWidth = 6; ctx.lineCap = "butt";
+      for (const side of [-1, 1]) {
+        ctx.beginPath(); ctx.moveTo(PINCH.x + side * (edge + 3), PINCH.y - 15); ctx.lineTo(PINCH.x + side * (edge + 3), PINCH.y + 15); ctx.stroke();
+      }
+      const gap = 17 - 8 * squeeze;
+      ctx.strokeStyle = "rgba(230,238,245,0.95)"; ctx.lineWidth = 7; ctx.lineCap = "round";
+      for (const side of [-1, 1]) {
+        ctx.beginPath(); ctx.moveTo(PINCH.x + side * gap, PINCH.y - 22); ctx.lineTo(PINCH.x + side * gap, PINCH.y + 22); ctx.stroke();
+      }
+    }
+  }
+
+  function label(text, x, y, tx, ty, align) {
+    ctx.strokeStyle = "rgba(143,161,177,0.55)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(tx, ty); ctx.stroke();
+    ctx.fillStyle = "rgba(200,214,226,0.95)"; ctx.font = `500 ${15 * K}px Inter, system-ui, sans-serif`; ctx.textAlign = align;
+    ctx.fillText(text, tx + (align === "left" ? 6 : -6), ty + 5 * K);
+  }
+
+  function draw() {
+    const q = flows();
+    const held = phase === "held";
+    const progress = held ? Math.min(1, X.rampS > 0 ? (steps * DT) / X.rampS : 1) : 0;
+    ctx.setTransform(canvas.width / VW, 0, 0, canvas.height / VH, 0, 0);
+    const bg = ctx.createRadialGradient(440, 380, 60, 440, 420, 620);
+    bg.addColorStop(0, "#0d1a26"); bg.addColorStop(1, "#020406");
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, VW, VH);
+
+    // Soft tissue, then bone.
+    ctx.fillStyle = "rgba(150,185,215,0.07)"; ctx.fill(HEAD);
+    ctx.strokeStyle = "rgba(170,200,228,0.28)"; ctx.lineWidth = 1.5; ctx.stroke(HEAD);
+    ctx.shadowColor = "rgba(190,220,245,0.5)"; ctx.shadowBlur = 10;
+    ctx.strokeStyle = "rgba(196,222,244,0.55)"; ctx.lineWidth = 5; trace(SKULL, true); ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "rgba(190,215,238,0.10)"; ctx.strokeStyle = "rgba(196,222,244,0.45)"; ctx.lineWidth = 2;
+    trace(JAW, true); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(288, 432, 26, 30, 0, 0, 6.283); ctx.stroke();
+    for (const b of SPINE) {
+      ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(0.14);
+      ctx.beginPath(); ctx.roundRect(-30, -15, 60, 30, 8); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.roundRect(30, -7, 34, 14, 6); ctx.stroke();
+      ctx.restore();
+    }
+
+    drawBrain();
+    drawVessels(q, progress);
+
+    label(NARROW ? "carotid" : "carotid artery", 396, 838, 290, 838, "right");
+    label(NARROW ? "vertebral" : "vertebral artery", 520, 850, 610, 850, "left");
+    label(NARROW ? "front" : "front of the brain", 318, 232, 206, 150, "right");
+    label(NARROW ? "back" : "back of the brain", 630, 500, 650, 590, "left");
+    if (!NARROW) {
+      ctx.font = "400 13px Inter, system-ui, sans-serif"; ctx.fillStyle = "rgba(143,161,177,0.9)";
+      ctx.textAlign = "right"; ctx.fillText("carotid supply", 200, 172);
+      ctx.textAlign = "left"; ctx.fillText("vertebral supply", 656, 614);
+    }
+    if (progress > 0) label(NARROW ? "compressed" : "carotid arteries compressed", PINCH.x - 26, PINCH.y, 290, 742, "right");
+    ctx.textAlign = "left"; ctx.fillStyle = "rgba(143,161,177,0.75)"; ctx.font = "400 13px Inter, system-ui, sans-serif";
+    ctx.font = `400 ${13 * K}px Inter, system-ui, sans-serif`;
+    ctx.fillText("Schematic, not to scale", 18, 884);
+  }
+
+  // ---- frame loop -----------------------------------------------------------
+  let last = performance.now(), sideTick = 0;
+  function frame(now) {
+    const dt = Math.min((now - last) / 1000, 0.1);
+    last = now;
+    if (phase === "held" || phase === "released") advance(dt);
+    const q = flows();
+    if (!reduceMotion || phase !== "idle") for (const v of VESSELS) v.phase += 95 * q[v.zone] * dt;
+    draw();
+    if (phase !== "idle" && now - sideTick > 80) { sideTick = now; renderSide(); }
+    requestAnimationFrame(frame);
+  }
+
+  function fit() {
+    const scale = Math.min(window.devicePixelRatio || 1, 2);
+    const w = canvas.clientWidth || VW;
+    NARROW = w < 520;
+    K = NARROW ? 1.7 : 1;      // text is drawn larger when the scan is shown small
+    canvas.width = Math.round(w * scale); canvas.height = Math.round((w * VH / VW) * scale);
+  }
+  window.addEventListener("resize", fit);
+  fit();
+  resetRun();
+  // For checks: jump the model forward without waiting.
+  window.__xray = { advance: (s) => { advance(s); renderSide(); draw(); }, state: () => ({ phase, front, back, crossedAt, recoveredAt, releasedAt }) };
+  requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>
