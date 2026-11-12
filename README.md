@@ -3,6 +3,7 @@
 > **Educational modelling project only. This is not medical advice and must not
 > be used for safety, training or medical decisions.**
 
-Work in progress. Stage 1 (reading) is in [SOURCES.md](SOURCES.md) and
-[PHYSIOLOGY.md](PHYSIOLOGY.md). The model, checks, uncertainty analysis and
-results will be added in later stages.
+Work in progress. Stage 1 (reading): [SOURCES.md](SOURCES.md),
+[PHYSIOLOGY.md](PHYSIOLOGY.md). Stage 2 (model): `choke_model/`,
+[ASSUMPTIONS.md](ASSUMPTIONS.md), `python scripts/stage2_model.py`.
+Tests: `pytest`.
