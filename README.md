@@ -8,4 +8,7 @@ Work in progress. Stage 1 (reading): [SOURCES.md](SOURCES.md),
 [ASSUMPTIONS.md](ASSUMPTIONS.md), `python -m scripts.stage2_model`.
 Stage 3 (checks): `python -m scripts.stage3_check`.
 Stage 4 (uncertainty): `python -m scripts.stage4_uncertainty` (about 3 minutes).
+Interactive simulator: open `simulator/index.html` in a browser. It is built
+by `python -m scripts.build_simulator` from the same parameters, and a test
+checks its JavaScript copy of the equation against the Python model.
 Tests: `pytest` (also run by GitHub Actions).

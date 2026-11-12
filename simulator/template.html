@@ -1,0 +1,467 @@
+<title>Brain Oxygen Simulator</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: an instrument panel. Controls in a narrow left column, the oxygen
+   trace and its readouts on the right; one column on a phone, results first. */
+:root {
+  --bg: #f6f7f8;
+  --panel: #ffffff;
+  --ink: #10161c;
+  --muted: #55606b;
+  --line: #dde1e5;
+  --trace: #2a78d6;
+  --low: #c8372d;
+  --band: #e9ecef;
+  --hold: #eef1f4;
+  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161a; --panel: #1a2026; --ink: #eef1f3; --muted: #a3adb7; --line: #2c343c;
+    --trace: #4c95ea; --low: #ef6a60; --band: #232a31; --hold: #1f262d; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161a; --panel: #1a2026; --ink: #eef1f3; --muted: #a3adb7; --line: #2c343c;
+  --trace: #4c95ea; --low: #ef6a60; --band: #232a31; --hold: #1f262d; color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-block: 24px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1 { font-family: var(--font-display); font-size: 28px; font-weight: 600; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-size: 15px; font-weight: 600; margin: 0; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 65ch; }
+.notice { border-left: 3px solid var(--low); padding: 8px 12px; background: var(--panel); max-width: 80ch; font-size: 14px; }
+.grid { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.controls { display: flex; flex-direction: column; gap: 20px; }
+.results { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+label, .label { font-size: 13px; color: var(--muted); }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.field-head output { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--ink); font-size: 13px; white-space: nowrap; }
+input[type="range"] { width: 100%; accent-color: var(--trace); margin: 0; }
+select, button {
+  font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line);
+  border-radius: 6px; padding: 7px 10px;
+}
+select { width: 100%; }
+button { cursor: pointer; font-weight: 500; }
+button:hover { border-color: var(--muted); }
+button.primary { background: var(--trace); border-color: var(--trace); color: #fff; }
+:focus-visible { outline: 2px solid var(--trace); outline-offset: 2px; }
+.hint { font-size: 12.5px; color: var(--muted); }
+details summary { cursor: pointer; font-family: var(--font-display); font-weight: 600; font-size: 15px; }
+details[open] summary { margin-bottom: 12px; }
+details .fields { display: flex; flex-direction: column; gap: 14px; }
+.readouts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.readout { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.readout .value { font-family: var(--font-display); font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.readout .sub { font-size: 12.5px; color: var(--muted); }
+.chart-box { width: 100%; }
+#chart { width: 100%; height: auto; display: block; touch-action: pan-y; }
+#chart text { font-family: var(--font-body); font-size: 12px; fill: var(--muted); }
+#chart .ink { fill: var(--ink); }
+#chart .grid-line { stroke: var(--line); stroke-width: 1; }
+#chart .trace { fill: none; stroke: var(--trace); stroke-width: 2.5; stroke-linejoin: round; }
+#chart .trace-low { fill: none; stroke: var(--low); stroke-width: 2.5; stroke-linejoin: round; }
+#chart .threshold { stroke: var(--ink); stroke-width: 1.2; stroke-dasharray: 5 4; }
+#chart .cursor { stroke: var(--ink); stroke-width: 1; }
+.transport { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.transport input { flex: 1 1 200px; }
+.transport output { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--muted); min-width: 18ch; text-align: right; }
+.meters { display: flex; flex-direction: column; gap: 10px; }
+.meter { display: grid; grid-template-columns: 150px minmax(0, 1fr) 52px; gap: 10px; align-items: center; font-size: 13px; }
+.meter .bar { position: relative; height: 14px; background: var(--band); border-radius: 3px; overflow: hidden; }
+.meter .fill { position: absolute; inset: 0 auto 0 0; background: var(--trace); border-radius: 3px 0 0 3px; }
+.meter .fill.low { background: var(--low); }
+.meter .mark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); }
+.meter .bar.marked { overflow: visible; }
+.meter .num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.state { font-weight: 600; font-size: 14px; display: flex; gap: 8px; align-items: center; }
+.state .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--trace); flex: none; }
+.state.low .dot { background: var(--low); }
+.compare { display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.compare li { margin-left: 18px; }
+ul { margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13px; }
+.equation { overflow-x: auto; padding: 4px 0; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13.5px; white-space: nowrap; }
+@media (max-width: 820px) {
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .controls, .results { display: contents; }
+  .readouts { order: 1; }
+  #panel-trace { order: 2; }
+  #panel-scenario { order: 3; }
+  #panel-threshold { order: 4; }
+  #panel-physiology { order: 5; }
+  #reset { order: 6; }
+  #panel-compare { order: 7; }
+  #panel-model { order: 8; }
+  .readouts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .meter { grid-template-columns: 110px minmax(0, 1fr) 46px; }
+  h1 { font-size: 24px; }
+}
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <h1>Brain Oxygen Simulator</h1>
+    <p class="lede">A one-equation model of the oxygen held in the brain's blood. Cut the blood flow, watch the store run down, and see when it crosses the level the model treats as loss of consciousness.</p>
+    <p class="notice"><strong>Educational model only.</strong> This is not medical advice and must not be used for safety, training or medical decisions. It describes physiology, not technique, and its key threshold is fitted, not measured.</p>
+  </header>
+
+  <div class="grid">
+    <div class="controls">
+      <section class="panel" id="panel-scenario" aria-labelledby="h-scenario">
+        <h2 id="h-scenario">Scenario</h2>
+        <div class="field">
+          <label for="scenario">Start from a published experiment</label>
+          <select id="scenario"></select>
+          <p class="hint" id="scenario-note"></p>
+        </div>
+        <div class="field">
+          <div class="field-head"><label for="carotidCut">Carotid flow removed</label><output id="o-carotidCut"></output></div>
+          <input type="range" id="carotidCut" min="0" max="100" step="1">
+        </div>
+        <div class="field">
+          <div class="field-head"><label for="vertebralOpen">Vertebral flow still open</label><output id="o-vertebralOpen"></output></div>
+          <input type="range" id="vertebralOpen" min="0" max="100" step="1">
+        </div>
+        <div class="field">
+          <div class="field-head"><label for="ramp">Time for flow to fall</label><output id="o-ramp"></output></div>
+          <input type="range" id="ramp" min="0" max="4" step="0.1">
+        </div>
+        <div class="field">
+          <div class="field-head"><label for="hold">Held for</label><output id="o-hold"></output></div>
+          <input type="range" id="hold" min="1" max="40" step="0.1">
+        </div>
+      </section>
+
+      <section class="panel" id="panel-threshold" aria-labelledby="h-threshold">
+        <h2 id="h-threshold">Unconsciousness threshold</h2>
+        <div class="field">
+          <div class="field-head"><label for="threshold">Oxygen level, share of baseline</label><output id="o-threshold"></output></div>
+          <input type="range" id="threshold" step="0.001">
+          <p class="hint">No paper we could open measures this. It is fitted to the 1943 data, and the fit allows anything inside the slider's range. This one setting moves the answer more than every other input.</p>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-physiology">
+        <details>
+          <summary>Physiology</summary>
+          <div class="fields">
+            <div class="field">
+              <div class="field-head"><label for="cbf">Brain blood flow</label><output id="o-cbf"></output></div>
+              <input type="range" id="cbf" step="0.1">
+            </div>
+            <div class="field">
+              <div class="field-head"><label for="oef">Oxygen extracted per pass</label><output id="o-oef"></output></div>
+              <input type="range" id="oef" step="0.01">
+            </div>
+            <div class="field">
+              <div class="field-head"><label for="cbv">Blood volume in the brain</label><output id="o-cbv"></output></div>
+              <input type="range" id="cbv" step="0.1">
+            </div>
+            <div class="field">
+              <div class="field-head"><label for="vertebralShare">Vertebral share of flow</label><output id="o-vertebralShare"></output></div>
+              <input type="range" id="vertebralShare" step="0.01">
+            </div>
+            <div class="field">
+              <div class="field-head"><label for="kappa">Kappa (no source)</label><output id="o-kappa"></output></div>
+              <input type="range" id="kappa" step="0.01">
+              <p class="hint">Sets how soon oxygen use slows as oxygen runs low. Sliders span the ranges used in the repo's uncertainty analysis.</p>
+            </div>
+          </div>
+        </details>
+      </section>
+      <button id="reset" type="button">Reset everything</button>
+    </div>
+
+    <div class="results">
+      <div class="readouts">
+        <div class="readout"><span class="label">Blood flow while held</span><span class="value" id="r-flow"></span><span class="sub">of normal</span></div>
+        <div class="readout"><span class="label">Crosses the threshold</span><span class="value" id="r-loc"></span><span class="sub" id="r-loc-sub"></span></div>
+        <div class="readout"><span class="label">Lowest oxygen</span><span class="value" id="r-min"></span><span class="sub">of baseline</span></div>
+        <div class="readout"><span class="label">Back above threshold</span><span class="value" id="r-rec"></span><span class="sub" id="r-rec-sub"></span></div>
+      </div>
+
+      <section class="panel" id="panel-trace" aria-labelledby="h-trace">
+        <h2 id="h-trace">Oxygen in the brain's blood over time</h2>
+        <div class="chart-box"><svg id="chart" viewBox="0 0 720 340" role="img" aria-label="Oxygen level over time"></svg></div>
+        <div class="transport">
+          <button id="play" type="button" class="primary">Play in real time</button>
+          <input type="range" id="scrub" min="0" step="0.05" aria-label="Time">
+          <output id="o-scrub"></output>
+        </div>
+        <div class="meters" aria-live="off">
+          <div class="meter"><span>Carotid arteries</span><div class="bar"><div class="fill" id="m-carotid"></div></div><span class="num" id="n-carotid"></span></div>
+          <div class="meter"><span>Vertebral arteries</span><div class="bar"><div class="fill" id="m-vertebral"></div></div><span class="num" id="n-vertebral"></span></div>
+          <div class="meter"><span>Oxygen store</span><div class="bar marked"><div class="fill" id="m-oxygen"></div><div class="mark" id="m-mark"></div></div><span class="num" id="n-oxygen"></span></div>
+          <div class="state" id="state"><span class="dot"></span><span id="state-text"></span></div>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-compare" aria-labelledby="h-compare">
+        <h2 id="h-compare">What was actually measured</h2>
+        <ul class="compare" id="compare"></ul>
+      </section>
+
+      <section class="panel" id="panel-model" aria-labelledby="h-model">
+        <h2 id="h-model">The model</h2>
+        <div class="equation">dC/dt = F(t)·Ca − F(t)·C/V − M(C)</div>
+        <p class="lede">C is the oxygen in the blood inside the brain. Blood brings oxygen in at rate F·Ca, carries what is left out at F·C/V, and the tissue uses M(C). The same equation lives in <code>choke_model/model.py</code>, solved there with SciPy; this page runs a copy of it that the repo's tests check against the Python version.</p>
+        <ul class="compare">
+          <li>The brain is treated as one well-mixed box, so it cannot show the front of the brain failing while the back is still supplied.</li>
+          <li>In the repo's Monte Carlo run, fewer than half of the predictions for the 2012 study landed inside the observed range.</li>
+          <li>Recovery after release has not been checked against data yet.</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+const CONFIG = /*__CONFIG__*/;
+/*__MODEL__*/
+(() => {
+  "use strict";
+  const PRE = 2, POST = 15, DT = 0.01;
+  const $ = (id) => document.getElementById(id);
+  const pct = (x, d = 0) => (100 * x).toFixed(d) + "%";
+  const secs = (x) => x.toFixed(1) + " s";
+
+  const OCCLUSION = ["carotidCut", "vertebralOpen", "ramp", "hold"];
+  const PHYSIOLOGY = ["cbf", "oef", "cbv", "vertebralShare", "kappa"];
+  const FORMAT = {
+    carotidCut: (v) => v.toFixed(0) + "%",
+    vertebralOpen: (v) => v.toFixed(0) + "%",
+    ramp: (v) => (v === 0 ? "instant" : secs(v)),
+    hold: secs,
+    threshold: (v) => pct(v, 1),
+    cbf: (v) => v.toFixed(1) + " ml/100 ml/min",
+    oef: (v) => pct(v),
+    cbv: (v) => v.toFixed(1) + " ml/100 ml",
+    vertebralShare: (v) => pct(v),
+    kappa: (v) => v.toFixed(2),
+  };
+  let run = null, marks = null, playing = false, lastFrame = 0;
+
+  // ---- set up controls from the config --------------------------------
+  for (const s of CONFIG.scenarios) $("scenario").add(new Option(s.name, s.id));
+  $("scenario").add(new Option("Custom", "custom"));
+  for (const key of [...PHYSIOLOGY, "threshold"]) {
+    const spec = key === "threshold" ? CONFIG.threshold : CONFIG.physiology[key];
+    Object.assign($(key), { min: spec.min, max: spec.max, value: spec.value });
+  }
+
+  function applyScenario(id) {
+    const s = CONFIG.scenarios.find((x) => x.id === id);
+    if (!s) return;
+    $("carotidCut").value = 100 * s.carotidCut;
+    $("vertebralOpen").value = 100 * s.vertebralOpen;
+    $("ramp").value = s.ramp;
+    $("hold").value = s.hold;
+  }
+
+  function reset() {
+    for (const key of PHYSIOLOGY) $(key).value = CONFIG.physiology[key].value;
+    $("threshold").value = CONFIG.threshold.value;
+    $("scenario").value = CONFIG.scenarios[0].id;
+    applyScenario(CONFIG.scenarios[0].id);
+    update(true);
+  }
+
+  // ---- model run --------------------------------------------------------
+  function read() {
+    const v = (id) => parseFloat($(id).value);
+    return {
+      p: { cbf: v("cbf"), oef: v("oef"), cbv: v("cbv"), kappa: v("kappa") },
+      s: {
+        carotidCut: v("carotidCut") / 100, vertebralOpen: v("vertebralOpen") / 100,
+        vertebralShare: v("vertebralShare"), tOn: PRE, tOff: PRE + v("hold"), ramp: v("ramp"),
+      },
+      threshold: v("threshold"), hold: v("hold"),
+    };
+  }
+
+  function update(toEnd) {
+    const x = read();
+    for (const key of [...OCCLUSION, ...PHYSIOLOGY, "threshold"]) {
+      $("o-" + key).textContent = FORMAT[key](parseFloat($(key).value));
+    }
+    const tEnd = PRE + x.hold + POST;
+    run = ChokeModel.simulate(x.p, x.s, tEnd, DT);
+    marks = ChokeModel.crossings(run, x.threshold);
+    run.x = x;
+    run.tEnd = tEnd;
+
+    const held = ChokeModel.flowFraction(x.s.tOff - DT / 2, x.s);
+    let min = 1;
+    for (const c of run.c) if (c < min) min = c;
+    $("r-flow").textContent = pct(held);
+    $("r-min").textContent = pct(min);
+    if (marks.loc === null) {
+      $("r-loc").textContent = "Not reached";
+      $("r-loc-sub").textContent = "during this hold";
+      $("r-rec").textContent = "n/a";
+      $("r-rec-sub").textContent = "threshold not crossed";
+    } else {
+      $("r-loc").textContent = secs(marks.loc - PRE);
+      $("r-loc-sub").textContent = "after flow is cut";
+      if (marks.recovery === null) {
+        $("r-rec").textContent = "Not yet";
+        $("r-rec-sub").textContent = "within " + POST + " s of release";
+      } else {
+        $("r-rec").textContent = secs(Math.max(marks.recovery - x.s.tOff, 0));
+        $("r-rec-sub").textContent = "after release, unchecked";
+      }
+    }
+
+    const id = $("scenario").value;
+    const scenario = CONFIG.scenarios.find((s) => s.id === id);
+    $("scenario-note").textContent = scenario ? scenario.note : "Your own settings.";
+    renderCompare();
+
+    const scrub = $("scrub");
+    scrub.max = tEnd;
+    if (toEnd || parseFloat(scrub.value) > tEnd) scrub.value = tEnd;
+    draw();
+  }
+
+  function renderCompare() {
+    const o = CONFIG.observed;
+    const items = [
+      `Rossen 1943, a cuff that stopped nearly all flow: unconscious after ${o.rossenLoc[0]} to ${o.rossenLoc[1]} s, and awake again ${o.rossenRecovery[0]} to ${o.rossenRecovery[1]} s after release. The threshold here is fitted to these times, so they are not a test.`,
+      `Mitchell 2012, neck restraint, 16 of 24 officers: eyes fixed at ${o.mitchellFixationMean} ± ${o.mitchellFixationSd.toFixed(1)} s (individuals ${o.mitchellFixationRange[0]} to ${o.mitchellFixationRange[1]} s). Fixation comes about ${o.fixationBeforeLoc[0]} to ${o.fixationBeforeLoc[1]} s before loss of consciousness. This study was kept out of the fit.`,
+      "Mitchell 2012, four officers whose blood velocity fell less on one side: still conscious when the hold ended at about 23 s.",
+    ];
+    $("compare").innerHTML = items.map((t) => `<li>${t}</li>`).join("");
+  }
+
+  // ---- drawing ------------------------------------------------------------
+  let W = 720, H = 340;
+  const L = 48, R = 16, T = 26, B = 40;
+  const X = (t) => L + ((W - L - R) * t) / run.tEnd;
+  const Y = (c) => T + (H - T - B) * (1 - c / 1.05);
+
+  function path(from, to) {
+    let d = "";
+    for (let i = from; i <= to; i += 5) d += (d ? "L" : "M") + X(run.t[i]).toFixed(1) + " " + Y(run.c[i]).toFixed(1);
+    return d;
+  }
+
+  function draw() {
+    // Draw at the size the chart is shown, so text stays readable on a phone.
+    W = Math.max(320, Math.min($("chart").parentElement.clientWidth || 720, 720));
+    H = W < 520 ? 280 : 340;
+    $("chart").setAttribute("viewBox", `0 0 ${W} ${H}`);
+    const narrow = W < 520;
+    const x = run.x, tNow = parseFloat($("scrub").value);
+    const i = Math.min(Math.round(tNow / DT), run.c.length - 1);
+    const th = x.threshold;
+    let g = "";
+    g += `<rect x="${X(x.s.tOn)}" y="${T}" width="${X(x.s.tOff) - X(x.s.tOn)}" height="${H - T - B}" fill="var(--hold)"/>`;
+    g += `<rect x="${L}" y="${Y(CONFIG.threshold.max)}" width="${W - L - R}" height="${Y(CONFIG.threshold.min) - Y(CONFIG.threshold.max)}" fill="var(--band)" opacity="0.7"/>`;
+    for (const c of [0, 0.25, 0.5, 0.75, 1]) {
+      g += `<line class="grid-line" x1="${L}" x2="${W - R}" y1="${Y(c)}" y2="${Y(c)}"/>`;
+      g += `<text x="${L - 8}" y="${Y(c) + 4}" text-anchor="end">${100 * c}%</text>`;
+    }
+    const step = run.tEnd > 40 || narrow ? 10 : 5;
+    for (let s = 0; s <= run.tEnd - PRE; s += step) {
+      g += `<text x="${X(s + PRE)}" y="${H - B + 18}" text-anchor="middle">${s}</text>`;
+    }
+    g += `<text x="${(L + W - R) / 2}" y="${H - 6}" text-anchor="middle">seconds since blood flow was cut</text>`;
+    if (narrow && X(x.s.tOff) - X(x.s.tOn) < 60) g = g.replace(">flow cut<", "><");
+    g += `<text class="ink" x="${X(x.s.tOn)}" y="${T - 10}">flow cut</text>`;
+    g += `<text class="ink" x="${X(x.s.tOff)}" y="${T - 10}">released</text>`;
+    g += `<text x="${W - R - 4}" y="${Y(CONFIG.threshold.max) + 14}" text-anchor="end">${narrow ? "fitted threshold range" : "range the fitted threshold could lie in"}</text>`;
+    g += `<line class="threshold" x1="${L}" x2="${W - R}" y1="${Y(th)}" y2="${Y(th)}"/>`;
+    g += `<text class="ink" x="${L + 6}" y="${Y(th) - 6}">threshold ${pct(th, 1)}</text>`;
+    g += `<clipPath id="below"><rect x="0" y="${Y(th)}" width="${W}" height="${H}"/></clipPath>`;
+    g += `<path class="trace" d="${path(0, i)}"/>`;
+    g += `<path class="trace-low" clip-path="url(#below)" d="${path(0, i)}"/>`;
+    if (marks.loc !== null && marks.loc <= tNow) {
+      g += `<circle cx="${X(marks.loc)}" cy="${Y(th)}" r="5" fill="var(--low)" stroke="var(--panel)" stroke-width="2"/>`;
+      const right = X(marks.loc) < W - 150;
+      g += `<text class="ink" x="${X(marks.loc) + (right ? 10 : -10)}" y="${Y(th) + 18}" text-anchor="${right ? "start" : "end"}">${secs(marks.loc - PRE)}</text>`;
+    }
+    g += `<line class="cursor" x1="${X(tNow)}" x2="${X(tNow)}" y1="${T}" y2="${H - B}"/>`;
+    g += `<circle cx="${X(run.t[i])}" cy="${Y(run.c[i])}" r="5" fill="${run.c[i] < th ? "var(--low)" : "var(--trace)"}" stroke="var(--panel)" stroke-width="2"/>`;
+    $("chart").innerHTML = g;
+
+    // Readouts at the cursor.
+    const sinceOn = run.t[i] - x.s.tOn;
+    const on = run.t[i] >= x.s.tOn && run.t[i] < x.s.tOff;
+    const progress = !on ? 0 : x.s.ramp > 0 ? Math.min(sinceOn / x.s.ramp, 1) : 1;
+    const carotid = 1 - x.s.carotidCut * progress;
+    const vertebral = 1 - (1 - x.s.vertebralOpen) * progress;
+    setMeter("carotid", carotid, false);
+    setMeter("vertebral", vertebral, false);
+    setMeter("oxygen", run.c[i], run.c[i] < th);
+    $("m-mark").style.left = pct(th, 2);
+    const low = run.c[i] < th;
+    $("state").classList.toggle("low", low);
+    $("state-text").textContent = low
+      ? "Below the threshold: the model predicts unconsciousness"
+      : "Above the threshold: the model predicts consciousness";
+    const rel = tNow - PRE;
+    $("o-scrub").textContent = (rel < 0 ? "before the cut" : secs(rel)) + ", oxygen " + pct(run.c[i]);
+  }
+
+  function setMeter(name, value, low) {
+    const fill = $("m-" + name);
+    fill.style.width = pct(Math.max(0, Math.min(value, 1)), 1);
+    fill.classList.toggle("low", low);
+    $("n-" + name).textContent = pct(value);
+  }
+
+  // ---- playback -----------------------------------------------------------
+  function setPlaying(on) {
+    playing = on;
+    $("play").textContent = on ? "Pause" : "Play in real time";
+    if (on) {
+      if (parseFloat($("scrub").value) >= run.tEnd - 0.01) $("scrub").value = 0;
+      lastFrame = performance.now();
+      requestAnimationFrame(frame);
+    }
+  }
+
+  function frame(now) {
+    if (!playing) return;
+    const t = Math.min(parseFloat($("scrub").value) + (now - lastFrame) / 1000, run.tEnd);
+    lastFrame = now;
+    $("scrub").value = t;
+    draw();
+    if (t >= run.tEnd) setPlaying(false);
+    else requestAnimationFrame(frame);
+  }
+
+  // ---- events -------------------------------------------------------------
+  for (const key of OCCLUSION) {
+    $(key).addEventListener("input", () => { $("scenario").value = "custom"; update(true); });
+  }
+  for (const key of [...PHYSIOLOGY, "threshold"]) $(key).addEventListener("input", () => update(true));
+  $("scenario").addEventListener("change", () => { applyScenario($("scenario").value); update(true); });
+  $("reset").addEventListener("click", reset);
+  $("play").addEventListener("click", () => setPlaying(!playing));
+  $("scrub").addEventListener("input", () => { if (playing) setPlaying(false); draw(); });
+  $("chart").addEventListener("pointermove", (e) => {
+    if (playing || (e.pointerType !== "mouse" && e.buttons === 0)) return;
+    const box = $("chart").getBoundingClientRect();
+    const t = ((((e.clientX - box.left) / box.width) * W - L) / (W - L - R)) * run.tEnd;
+    $("scrub").value = Math.max(0, Math.min(t, run.tEnd));
+    draw();
+  });
+
+  if (typeof ResizeObserver !== "undefined") {
+    new ResizeObserver(() => run && draw()).observe($("chart").parentElement);
+  }
+  reset();
+})();
+</script>
