@@ -47,7 +47,10 @@ and the fit keeps that whole range.
 **A8. Arterial oxygen content comes from the Fick principle.**
 Ca = CMRO2 / (OEF × CBF) (S5 derived, about 0.169 ml O2/ml). This makes
 every sampled parameter set start at a true steady state. It has not been
-checked against an independently measured Ca (Gap 4).
+checked against an independently measured Ca (Gap 4). A side effect: once
+Ca is tied to the other three, CMRO2 cancels out of the equation for C/C0, so
+the predicted times do not depend on CMRO2 at all. That is a property of this
+assumption, not a finding about the brain.
 
 **A9. Flow changes as a step, or as a straight-line ramp.** For Rossen the
 occlusion is a step: S2 reports that the cuff inflated "in one-eighth of a
@@ -73,3 +76,22 @@ right. Under reading C the model predicts no loss of consciousness in
 subjects who did lose it, which points at A1: a one-box model cannot
 represent the front of the brain running out of oxygen while the back is
 still supplied.
+
+**A12. How the Monte Carlo samples each input (stage 4).** The sources give
+a mean and an SD, not a distribution, so the shapes are our choice.
+- Inputs published as mean ± SD (CBF, CMRO2, OEF, CBV from S5; vertebral
+  share from S9; onset time from S3) are drawn from a normal distribution cut
+  off at ± 2 SD, and at zero for durations and velocities.
+- They are drawn independently. Real people's CBF, OEF and CMRO2 are linked,
+  and no opened source gives the correlations, so the spread is probably too
+  wide in some directions.
+- The Rossen time the threshold is fitted to is drawn evenly from 4 to 10 s,
+  and the vertebral flow his cuff left evenly from 0 to 1 (A7), because the
+  sources give only those limits.
+- κ has no source and is drawn evenly on a log scale from 0.01 to 0.5, purely
+  to test whether it matters.
+- The Mitchell velocities are drawn at the level of the group mean (mean ±
+  SEM), because individual values are not published. This understates how
+  much individuals differ.
+- "Inside the observed range" means inside 6.3–12.2 s, the individual range
+  read from Mitchell's Figure 6.

@@ -1,7 +1,7 @@
 """Stage 3: check the model and compare predictions with published data.
 
 Writes results/stage3_check.txt and figures/stage3_time_vs_occlusion.png.
-Run from the repo root:  python scripts/stage3_check.py
+Run from the repo root:  python -m scripts.stage3_check
 """
 
 from __future__ import annotations

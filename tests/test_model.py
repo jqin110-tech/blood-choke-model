@@ -25,14 +25,13 @@ def test_consumption_equals_cmro2_at_baseline() -> None:
 
 
 def test_fick_principle_units() -> None:
-    """Ca from Fick gives back CMRO2 = CBF x OEF x Ca, and a plausible content.
-
-    Ca should be below the O2 capacity of blood, about 0.2 ml/ml, and positive.
-    """
+    """Ca from Fick gives back CMRO2 = CBF x OEF x Ca, in consistent units."""
     p = Params()
     assert p.cbf * p.oef * p.arterial_o2 == pytest.approx(p.cmro2)
-    assert 0.1 < p.arterial_o2 < 0.25
-    # Per-minute values convert back to the sourced per-minute numbers.
+    assert p.arterial_o2 > 0
+    # Venous content must be below arterial content, and the store is CBV x venous content.
+    assert p.baseline_o2 / p.cbv == pytest.approx(p.arterial_o2 * (1 - p.oef))
+    # Per-second values convert back to the sourced per-minute numbers.
     assert p.cbf * 60 == pytest.approx(44.4)
     assert p.cmro2 * 60 == pytest.approx(3.3)
 

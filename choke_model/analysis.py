@@ -5,9 +5,10 @@ from __future__ import annotations
 import itertools
 
 import numpy as np
+from scipy.integrate import solve_ivp
 from scipy.optimize import brentq
 
-from .model import Choke, consumption, fit_threshold, simulate
+from .model import Choke, consumption, fit_threshold, rhs, simulate
 from .params import ROSSEN_LOC_S, Params
 
 
@@ -49,7 +50,10 @@ def steady_o2_fraction(p: Params, flow_fraction: float) -> float:
 
 def critical_flow_fraction(p: Params, threshold: float) -> float:
     """Smallest sustained flow fraction that keeps C/C0 at or above threshold."""
-    return brentq(lambda q: steady_o2_fraction(p, q) - threshold, 1e-6, 1.0)
+    lowest = 1e-9
+    if steady_o2_fraction(p, lowest) >= threshold:
+        return lowest  # threshold so low that any trickle of flow is enough
+    return brentq(lambda q: steady_o2_fraction(p, q) - threshold, lowest, 1.0)
 
 
 def carotid_cut_for_flow(p: Params, flow_fraction: float) -> float:
@@ -68,3 +72,27 @@ def choke_for_flow(p: Params, flow_fraction: float, ramp_s: float = 0.0) -> Chok
     if flow_fraction >= v:
         return Choke(carotid_occlusion=carotid_cut_for_flow(p, flow_fraction), ramp_s=ramp_s)
     return Choke(carotid_occlusion=1.0, vertebral_open=flow_fraction / v, ramp_s=ramp_s)
+
+
+def loc_time(p: Params, choke: Choke, threshold: float, t_max: float = 3600.0) -> float:
+    """Time from onset to LOC for a sustained choke starting at t = 0, or nan.
+
+    Faster than time_to_loc and exact about "never": during a sustained choke
+    C(t) falls steadily toward its steady state, so LOC happens if and only
+    if that steady state lies below the threshold.
+    """
+    q = choke.flow_fraction(p.vertebral_share)
+    if steady_o2_fraction(p, q) >= threshold:
+        return np.nan
+
+    def crossed(t: float, y: np.ndarray, *_: object) -> float:
+        return y[0] / p.baseline_o2 - threshold
+
+    crossed.terminal = True
+    t, y = 0.0, [p.baseline_o2]
+    for t_stop in (choke.ramp_s, t_max) if choke.ramp_s > 0 else (t_max,):
+        sol = solve_ivp(rhs, (t, t_stop), y, args=(p, choke), events=crossed, rtol=1e-8, atol=1e-11)
+        if sol.t_events[0].size:
+            return float(sol.t_events[0][0])
+        t, y = t_stop, [sol.y[0, -1]]
+    return np.nan

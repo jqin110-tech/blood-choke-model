@@ -1,0 +1,71 @@
+Stage 4: Monte Carlo, 20000 draws, seed 2026
+
+[inputs sampled]
+  cbf                    normal 44.4 +/- 6.5, cut at +/- 2 SD   S5 Ito 2004, ml/100 ml/min
+  cmro2                  normal 3.3 +/- 0.5, cut at +/- 2 SD    S5 Ito 2004, ml O2/100 ml/min
+  oef                    normal 0.44 +/- 0.06, cut at +/- 2 SD  S5 Ito 2004
+  cbv                    normal 3.8 +/- 0.7, cut at +/- 2 SD    S5 Ito 2004, ml/100 ml
+  vertebral_share        normal 0.28 +/- 0.04, cut at +/- 2 SD  S9 Zarrinkoob 2015
+  kappa                  log-uniform 0.01 to 0.5                NO SOURCE (A5)
+  rossen_loc_s           uniform 4 to 10                        S1/S2: LOC after 4 to 10 s
+  rossen_vertebral_open  uniform 0 to 1                         S1/S2: vertebral flow left by the cuff is unknown (A7)
+  ramp_s                 normal 1.6 +/- 1.2, cut at +/- 2 SD    S3: time to minimum velocity, SD derived
+  fixation_lag_s         uniform 0.5 to 1                       S1/S2: fixation 0.5 to 1 s before LOC
+  mca_r_before           normal 45 +/- 3, cut at +/- 2 SD       S3: R MCAVmean 45 +/- 3 (SEM)
+  mca_r_during           normal 8 +/- 4, cut at +/- 2 SD        S3: R MCAVmean 8 +/- 4 (SEM)
+  mca_l_before           normal 53 +/- 2, cut at +/- 2 SD       S3: L MCAVmean 53 +/- 2 (SEM)
+  mca_l_during           normal 10 +/- 3, cut at +/- 2 SD       S3: L MCAVmean 10 +/- 3 (SEM)
+
+[fitted threshold C/C0] median 0.27, 5-95 % range 0.004 to 0.60
+
+[plain blood choke: carotids shut at once, vertebrals open]
+  LOC never happens in  26.6 % of draws
+  when it does: median   8.7 s, 5-95 % range  5.1 to  16.2 s
+
+[Mitchell 2012, HELD OUT] predicted time to ocular fixation, 16 subjects who lost consciousness
+  observed: 9.5 +/- 1.6 s (mean +/- SD), individual range 6.3-12.2 s
+  A  whole brain falls like the MCA velocity
+      never:  16.5 % | when it does: median   7.0 s, 5-95 % range  4.2 to  12.5 s
+      inside observed range:  47.4 % of all draws | inside mean +/- SD:  22.7 %
+  B  carotids shut, vertebrals normal
+      never:  26.6 % | when it does: median   8.8 s, 5-95 % range  5.2 to  16.4 s
+      inside observed range:  47.4 % of all draws | inside mean +/- SD:  26.0 %
+  C  carotids pass the MCA fraction, vertebrals normal
+      never:  50.7 % | when it does: median  12.3 s, 5-95 % range  6.9 to  27.1 s
+      inside observed range:  23.0 % of all draws | inside mean +/- SD:  13.9 %
+
+[Mitchell 2012, HELD OUT] 4 subjects with no fixation after 23.3 s
+  reading A: model agrees (no LOC) in  60.3 % of draws | gets BOTH groups right in  32.8 %
+  reading C: model agrees (no LOC) in  96.1 % of draws | gets BOTH groups right in  19.8 %
+
+[lowest sustained flow that never causes LOC, as a fraction of normal]
+  model: median 0.41, 5-95 % range 0.06 to 0.60
+  Claassen 2021 (S4): 0.44 | Njemanze 1992 (secondary, velocity): 0.50
+
+[sensitivity 1: rank correlation of each sampled input with plain-choke LOC time]
+  ('never' counts as the longest time; +1 = input up, time up)
+  Rossen LOC time fitted to (4-10 s)     +0.72
+  vertebral flow left by Rossen's cuff   -0.50
+  oxygen extraction (OEF)                +0.17
+  blood volume in brain (CBV)            -0.17
+  blood flow (CBF)                       +0.13
+  vertebral share of flow                +0.10
+  kappa (no source)                      +0.03
+  oxygen use (CMRO2)                     +0.01
+  for reference, the fitted threshold itself: -0.78
+
+[sensitivity 2: one input at a time, others central, threshold held at the central fit]
+  central prediction 10.5 s; each row: LOC time at the low and high end of the input
+  blood flow (CBF)                       14.8 s -> 8.1 s
+  oxygen use (CMRO2)                     10.5 s -> 10.5 s
+  oxygen extraction (OEF)                28.3 s -> 5.6 s
+  blood volume in brain (CBV)            6.6 s -> 14.4 s
+  vertebral share of flow                8.1 s -> 16.3 s
+  kappa (no source)                      8.8 s -> never
+  LOC threshold                          never -> 4.2 s
+
+[NOT a prediction] thresholds in draws that get both Mitchell groups right, reading A: 0.03 to 0.44 (5-95 %)
+[NOT a prediction] thresholds in draws that get both Mitchell groups right, reading C: 0.20 to 0.65 (5-95 %)
+[NOT a prediction] thresholds in draws inside the observed range, reading B: 0.09 to 0.59 (5-95 %)
+
+[convergence] plain-choke median, first vs second half of draws: 8.63 vs 8.71 s; 'never' share 26.5 vs 26.6 %

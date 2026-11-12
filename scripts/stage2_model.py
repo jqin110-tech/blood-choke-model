@@ -1,7 +1,7 @@
 """Stage 2: fit the LOC threshold to Rossen (1943) and plot example trajectories.
 
 Writes results/stage2_threshold.txt and figures/stage2_trajectories.png.
-Run from the repo root:  python scripts/stage2_model.py
+Run from the repo root:  python -m scripts.stage2_model
 """
 
 from __future__ import annotations
