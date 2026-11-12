@@ -22,7 +22,7 @@ has been sourced; S5 is used for all inputs.
 
 **A4. A choke removes carotid flow only; vertebral flow is unchanged.** Flow
 during a choke is F0 × [(1 − v)(1 − α) + v·β], with v the vertebral share
-(S6, S7), α the fraction of carotid flow removed, and β = 1 (vertebrals
+(S9, S6, S7), α the fraction of carotid flow removed, and β = 1 (vertebrals
 open). Blood pressure is assumed unchanged (S3: MAP did not change
 significantly). Venous outflow blockage is ignored.
 
@@ -37,6 +37,8 @@ No opened source gives θ as an oxygen level (SOURCES.md, Gap 1). Following
 Joshua's decision, θ is **fitted** to the Rossen full-occlusion times
 (S1/S2: 4–10 s) and will be replaced if a measured value is found. The
 Mitchell 2012 data (S3) are **not** used in the fit, so they are a fair test.
+Two published versions of the Mitchell timing exist (9.5 s in the abstract,
+7.9 s as cited by S10); the model is compared with both.
 
 **A7. The Rossen cuff blocked the carotids fully and the vertebrals
 partly.** S1 says the cuff "did not completely stop the blood supply in the

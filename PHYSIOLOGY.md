@@ -18,7 +18,8 @@ a proper calculation.
 Blood reaches the brain through four arteries. About three quarters of the
 flow comes up the two internal carotid arteries in the front of the neck, and
 about a quarter comes up the two vertebral arteries, which run through the
-bones of the spine (S6: 73.7% vs 26.3%; S7 gives a similar split). A blood
+bones of the spine (S9: 72% vs 28% in 94 people; S6 and S7 give similar
+splits). A blood
 choke compresses the carotids. In the one modern human study we could open,
 neck restraint cut the velocity of blood in the middle cerebral arteries to
 about a fifth of normal while arterial blood pressure and heart rate did not
@@ -30,7 +31,9 @@ The observed timings are short and consistent. In the 1940s Red Wing
 experiments, a cuff inflated around the neck stopped blood flow almost
 completely, and consciousness was lost after 4 to 10 seconds; it returned 3 to
 11.5 seconds after release (S1, S2). In the 2012 study, the eyes became fixed
-after 9.5 ± 0.4 (SE) seconds (S3); in the earlier work, fixation came half a
+after 9.5 ± 0.4 (SE) seconds according to its abstract (S3), although a later
+paper cites the same study as 7.9 seconds (S10), and we could not open the
+full text to settle which is right. In the earlier work, fixation came half a
 second to a second before loss of consciousness (S1). A 2021 review gives the
 same picture: function fails once flow drops below about 22 ml/100 g/min, and
 consciousness is often lost within 10 seconds (S4).

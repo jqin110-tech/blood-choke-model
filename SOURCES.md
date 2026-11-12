@@ -8,6 +8,10 @@ values), the arithmetic is shown and the entry is marked **derived**.
 
 Status key: **opened** = text read this session; **partial** = only the
 abstract or part of the text could be read; **not opened** = could not access.
+S9–S11 were opened on 12 Nov 2026 by a second thread of this project that had
+wider network access; its quotes are in `sources/FETCHED.md`, copied here.
+A **secondary** value is one paper's report of another paper's result; it is
+kept separate from values read in the original.
 
 ---
 
@@ -83,6 +87,13 @@ confirmations.
   (LOC ½–1 s after fixation) gives an *inferred* LOC time of about
   **10–10.5 s**; this mixes two sources and is labelled as inferred.
 
+**Conflict (unresolved).** Whinnery & Forster 2013 (S10) cite this same paper
+as: "The mean time from vascular neck restraint ... to LOC defined by onset of
+eye fixation in 24 healthy volunteer police officers was 7.9 s (range 6.3 to
+12.2 s)". The abstract says 9.5 ± 0.4 (SE) s in 16 subjects. The full text
+could not be opened (HTTP 403 from two environments), so **both values are
+kept** and every comparison with Mitchell is reported against both.
+
 ## S4. Claassen, Thijssen, Panerai & Faraci (2021) — partial (first ~40% of text)
 
 - Claassen JAHR, Thijssen DHJ, Panerai RB, Faraci FM. *Regulation of cerebral
@@ -107,8 +118,8 @@ confirmations.
   extraction fraction and cerebral metabolic rate of oxygen measured by
   positron emission tomography with 15O-labelled carbon dioxide or water,
   carbon monoxide and oxygen: a multicentre study in Japan.* Eur J Nucl Med
-  Mol Imaging. 2004. doi:10.1007/s00259-003-1430-8. (Volume, pages and PMID
-  not yet verified.)
+  Mol Imaging. 2004;31(5):635–643. doi:10.1007/s00259-003-1430-8.
+  PMID 14730405. (Volume, pages and PMID from the Europe PMC record.)
 - Link opened: https://www.springermedicine.com/database-of-normal-human-cerebral-blood-flow-cerebral-blood-volu/20711574
 
 | Quantity | Exact text | Value used |
@@ -167,9 +178,75 @@ used only as a second estimate beside S6.
 |---|---|---|
 | Pressure at LOC | "Consciousness is usually lost when the mean cerebral blood pressure falls to 25 mm. Hg" | context only (pressure, not O2) |
 
+## S9. Zarrinkoob et al. (2015) — opened (full text)
+
+- Zarrinkoob L, Ambarki K, Wåhlin A, Birgander R, Eklund A, Malm J. *Blood
+  flow distribution in cerebral arteries.* J Cereb Blood Flow Metab.
+  2015;35(4):648–654. doi:10.1038/jcbfm.2014.241. PMID 25564234.
+  PMCID PMC4420884.
+- Link opened: https://pmc.ncbi.nlm.nih.gov/articles/PMC4420884/
+
+| Quantity | Exact text | Value used |
+|---|---|---|
+| Subjects | "49 subjects included in the HY group (mean age±s.d., 25±2 years; 27 women) and 45 subjects in the HE group (mean age±s.d., 71±4 years; 23 women)" | n = 94 |
+| Definition | "Total cerebral blood flow was defined as BFR in the internal carotid plus vertebral arteries" | tCBF = ICA + VA |
+| Split | "Carotid/vertebral distribution was 72%/28% and was not related to age, sex, or brain volume." | 72 / 28 % |
+| Split SD | "independent of age (HY: 72/28%±4%, HE: 72/28%±4%, P =0.7)" | **vertebral share 28 ± 4 %** |
+| Absolute | "sum of the right and left ICA) was 515±96 mL/min ... (sum of the right and left VA), the flow rate was 202±44 mL/min (28% of tCBF)" | ICA 515 ± 96; VA 202 ± 44 mL/min |
+| tCBF | "Total cerebral blood flow (717 ± 123 mL/min)" | 717 ± 123 mL/min |
+| Perfusion | "(HY: 60±8 mL/min/100 mL; HE: 56±7 mL/min/100 mL, P =0.04)" | context: higher than S5's PET value |
+
+This is the largest sample for the flow split, and its young group (25 ± 2 y)
+is the closest match to Rossen's subjects (age 20–25), so it sets the central
+vertebral share. Note the perfusion figure (56–60 mL/min/100 mL, MRI, whole
+brain inflow / brain volume) is higher than S5's 44.4 (PET, cortical); the
+model keeps S5 because CBF, OEF, CBV and CMRO2 must come from one consistent
+set for the Fick derivation (A8). The disagreement is a stated limitation.
+
+## S10. Whinnery & Forster (2013) — opened (full text). G-force study, not neck compression
+
+- Whinnery JE, Forster EM. *The +Gz-induced loss of consciousness curve.*
+  Extreme Physiol Med. 2013;2:19. doi:10.1186/2046-7648-2-19.
+  PMCID PMC3710154.
+- Link opened: https://www.ebi.ac.uk/europepmc/webservices/rest/PMC3710154/fullTextXML
+
+| Quantity | Exact text | Value used |
+|---|---|---|
+| G-LOC time | "for onset rates ≥ 1.0 G/s, G-LOC will occur in a mean time of 9.10 s" | context only (different mechanism of flow loss) |
+| Rossen mean, **secondary** | "Rossen acutely arrested cerebral circulation in 74 humans using a cervical pressure cuff with the mean time of 6.41-6.91 s" | secondary mean LOC 6.41–6.91 s (from reanalyses not opened) |
+| Mitchell, **secondary** | "to LOC defined by onset of eye fixation in 24 healthy volunteer police officers was 7.9 s (range 6.3 to 12.2 s)" | secondary: 7.9 s, range 6.3–12.2 s (conflicts with S3) |
+| Rossen DOI as printed | 10.1001/archneurpsyc.1943.02290230022002 | not opened |
+
+## S11. Whinnery, Forster & Rogers (2014) — opened (full text). G-force study
+
+- Whinnery JE, Forster EM, Rogers PB. *The +Gz recovery of consciousness
+  curve.* Extreme Physiol Med. 2014;3:9. doi:10.1186/2046-7648-3-9.
+  PMCID PMC4007145.
+- Link opened: https://www.ebi.ac.uk/europepmc/webservices/rest/PMC4007145/fullTextXML
+
+| Quantity | Exact text | Value used |
+|---|---|---|
+| G-LOC recovery | "Mean time from loss to return of consciousness for 760 episodes of consciousness recovery was 10.4 ± 5.1 s; minimum 1 s; maximum 38 s." | context for stage 5 (measured from LOC, includes time still under G) |
+| Minimum recovery | "there is a minimum time (mean 8.29 ± 3.84 s) required for recovery of consciousness when complete loss of consciousness occurs." | context for stage 5 |
+| Rossen recovery, **secondary** | "For their 28 LOC episodes defining their ABSINCAP equivalent, the mean was 6.14 s" | secondary mean 6.14 s, n = 28 |
+
+## Bibliographic records only (no values taken)
+
+- Kety SS, Schmidt CF. *The nitrous oxide method for the quantitative
+  determination of cerebral blood flow in man: theory, procedure and normal
+  values.* J Clin Invest. 1948;27(4):476–483. doi:10.1172/JCI101994.
+  PMID 16695568.
+- Kety SS, Schmidt CF. *The effects of altered arterial tensions of carbon
+  dioxide and oxygen on cerebral blood flow and cerebral oxygen consumption of
+  normal young men.* J Clin Invest. 1948;27(4):484–492.
+  doi:10.1172/JCI101995. PMID 16695569.
+- Lennox WG, Gibbs FA, Gibbs EL. *Relationship of unconsciousness to cerebral
+  blood-flow and to anoxaemia.* Arch Neurol Psychiatry. 1935;34:1001.
+  (Citation seen in a search listing only.)
+
 ---
 
-## Ranges carried into the model (proposed, pending stage 2)
+## Ranges carried into the model
 
 | Parameter | Range | From |
 |---|---|---|
@@ -177,24 +254,23 @@ used only as a second estimate beside S6.
 | CMRO2 | 3.3 ± 0.5 ml O2/100 ml/min | S5 |
 | OEF | 0.44 ± 0.06 | S5 |
 | Cerebral blood volume (O2 store) | 3.8 ± 0.7 ml/100 ml | S5 |
-| Vertebral share of flow | 0.245 – 0.263 (± 0.037) | S7 (derived), S6 |
+| Vertebral share of flow | central 0.28 (S9); range 0.226 – 0.32 = union of S6 (0.263 ± 0.037), S7 (0.245) and S9 (0.28 ± 0.04) | S9, S6, S7 |
 | Residual flow during neck restraint | ~0.09 – 0.27 of baseline (velocity indicator) | S3 (derived) |
 | Observed time to LOC, full arrest | 4 – 10 s | S1/S2 |
 | Observed time to ocular fixation, neck restraint | 9.5 ± 1.6 s (SD, derived) | S3 |
+| Same study, as cited by S10 (**secondary, conflicting**) | 7.9 s, range 6.3 – 12.2 s | S10 |
+| Rossen means (**secondary**) | LOC 6.41 – 6.91 s; recovery 6.14 s | S10, S11 |
 | Observed recovery | 3 – 11.5 s | S1/S2 |
 
 ## Gaps (not filled; awaiting a source)
 
-1. **LOC threshold as an oxygen level.** No opened source gives the brain
-   tissue or venous O2 level at which consciousness is lost. Searched:
-   Lennox & Gibbs 1935, jugular venous saturation at unconsciousness, G-LOC
-   "functional buffer period" (Whinnery). Searches returned nothing or were
-   rate-limited / captcha-blocked.
-2. **Kety & Schmidt (1948)**, the classic normal values for CBF and CMRO2:
-   the JCI scanned PDF returned a server error.
-3. **Zarrinkoob et al. (2015)**, J Cereb Blood Flow Metab 35(4):648–54,
-   doi:10.1038/jcbfm.2014.241, PMID 25564234: citation verified from the
-   PubMed listing, but the abstract and full text were blocked.
+1. **LOC threshold as an oxygen level.** Still no opened source, after a
+   second search from an environment with wider access. Lennox, Gibbs & Gibbs
+   (1935) is the best lead and is not reachable. The threshold stays fitted
+   (ASSUMPTIONS.md, A6).
+2. **Mitchell (2012) full text** (HTTP 403 from two environments). Needed to
+   resolve the 9.5 s vs 7.9 s conflict, and for LOC and recovery times.
+3. **Kety & Schmidt (1948)** values: citations verified, PDFs not reachable.
 4. **Independent arterial O2 content** to check the derived 0.169 ml/ml.
-5. **Mitchell (2012) full text**: LOC time, recovery time, and occlusion
-   details beyond the abstract.
+5. **Rossen (1943) original**: only the reprint (S1) and the review (S2) were
+   opened.

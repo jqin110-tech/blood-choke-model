@@ -21,6 +21,7 @@ from choke_model.analysis import (
 from choke_model.model import NO_CHOKE, Choke, simulate
 from choke_model.params import (
     FIXATION_BEFORE_LOC_S, MITCHELL_FIXATION_MEAN_S, MITCHELL_FIXATION_SD_S,
+    MITCHELL_FIXATION_SECONDARY_RANGE_S, MITCHELL_FIXATION_SECONDARY_S,
     MITCHELL_RESIDUAL_VELOCITY, ROSSEN_LOC_S, Params,
 )
 
@@ -68,7 +69,10 @@ def main() -> None:
         "A: total flow = MCA velocity ratio, L": MITCHELL_RESIDUAL_VELOCITY[1],
         "B: carotids fully cut, vertebrals open": p.vertebral_share,
     }
-    out.append("  scenario                                  | flow left | fixation, central thr | fixation over thr range | gap to 9.5 s (central)")
+    out.append(f"  the same study as cited by Whinnery & Forster 2013 (S10, secondary, CONFLICTING): "
+               f"{MITCHELL_FIXATION_SECONDARY_S} s, range {MITCHELL_FIXATION_SECONDARY_RANGE_S[0]}-"
+               f"{MITCHELL_FIXATION_SECONDARY_RANGE_S[1]} s")
+    out.append("  scenario                                  | flow left | fixation, central thr | fixation over thr range | gap to 9.5 s | gap to 7.9 s")
     for name, q in scenarios.items():
         choke = choke_for_flow(p, q)
         t_c = time_to_loc(p, choke, theta)
@@ -77,7 +81,8 @@ def main() -> None:
         latest = time_to_loc(p, choke, lo_theta) - FIXATION_BEFORE_LOC_S[0]
         rng = f"{earliest:.1f} s to " + ("never" if np.isnan(latest) else f"{latest:.1f} s")
         gap = (sum(fix_c) / 2) - MITCHELL_FIXATION_MEAN_S
-        out.append(f"  {name:41s} | {q:9.3f} | {fix_c[0]:5.1f} to {fix_c[1]:4.1f} s       | {rng:23s} | {gap:+.1f} s")
+        gap2 = (sum(fix_c) / 2) - MITCHELL_FIXATION_SECONDARY_S
+        out.append(f"  {name:41s} | {q:9.3f} | {fix_c[0]:5.1f} to {fix_c[1]:4.1f} s       | {rng:23s} | {gap:+.1f} s       | {gap2:+.1f} s")
     out.append(f"  observed band (mean +/- SD): {fix_lo:.1f} to {fix_hi:.1f} s")
     out.append("")
 
@@ -100,7 +105,9 @@ def main() -> None:
         ax.plot(cuts * 100, ts, style, color="C0", label=lab)
     ax.axhspan(*ROSSEN_LOC_S, color="C1", alpha=0.15, label="Rossen 1943 LOC, 4-10 s (fitted to)")
     ax.axhspan(fix_lo + FIXATION_BEFORE_LOC_S[0], fix_hi + FIXATION_BEFORE_LOC_S[1], color="C2", alpha=0.15,
-               label="Mitchell 2012 inferred LOC (held out)")
+               label="Mitchell 2012 inferred LOC, from abstract (held out)")
+    ax.axhline(MITCHELL_FIXATION_SECONDARY_S + sum(FIXATION_BEFORE_LOC_S) / 2, color="C2", ls=":", lw=1.2,
+               label="same study as cited by Whinnery 2013 (conflicting)")
     ax.set_xlabel("carotid flow removed (%), vertebral arteries open")
     ax.set_ylabel("predicted time to LOC (s)")
     ax.set_xlim(0, 100)

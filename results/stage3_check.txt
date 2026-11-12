@@ -2,15 +2,16 @@ Stage 3 checks (nominal parameters)
 
 [steady state] no choke, 300 s: max |C/C0 - 1| = 0.0e+00
 [monotonic] time to LOC never rises as carotid occlusion increases: True
-[monotonic] with vertebrals open, LOC needs carotid cut >= 0.84 (central threshold 0.231)
+[monotonic] with vertebrals open, LOC needs carotid cut >= 0.84 (central threshold 0.241)
 
 [Rossen 1943, IN-SAMPLE] observed LOC 4-10 s; matches by construction (threshold was fitted to it).
 [Mitchell 2012, HELD OUT] observed ocular fixation 9.5 +/- 1.6 s (mean +/- SD, derived); model fixation = model LOC - 0.5-1.0 s
-  scenario                                  | flow left | fixation, central thr | fixation over thr range | gap to 9.5 s (central)
-  A: total flow = MCA velocity ratio, R     |     0.178 |   6.8 to  7.3 s       | 2.4 s to never          | -2.4 s
-  A: total flow = MCA velocity ratio, L     |     0.189 |   7.0 to  7.5 s       | 2.5 s to never          | -2.2 s
-  B: carotids fully cut, vertebrals open    |     0.263 |   9.1 to  9.6 s       | 3.0 s to never          | -0.1 s
+  the same study as cited by Whinnery & Forster 2013 (S10, secondary, CONFLICTING): 7.9 s, range 6.3-12.2 s
+  scenario                                  | flow left | fixation, central thr | fixation over thr range | gap to 9.5 s | gap to 7.9 s
+  A: total flow = MCA velocity ratio, R     |     0.178 |   6.7 to  7.2 s       | 2.3 s to never          | -2.6 s       | -1.0 s
+  A: total flow = MCA velocity ratio, L     |     0.189 |   6.9 to  7.4 s       | 2.4 s to never          | -2.4 s       | -0.8 s
+  B: carotids fully cut, vertebrals open    |     0.280 |   9.5 to 10.0 s       | 3.0 s to never          | +0.2 s       | +1.8 s
   observed band (mean +/- SD): 7.9 to 11.1 s
 
 [Claassen 2021, independent] function lost below ~22/50 = 0.44 of normal flow
-  model: lowest sustained flow that never causes LOC = 0.39 (central), 0.01 to 0.63 over the fitted threshold range
+  model: lowest sustained flow that never causes LOC = 0.40 (central), 0.01 to 0.64 over the fitted threshold range

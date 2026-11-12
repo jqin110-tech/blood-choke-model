@@ -27,9 +27,11 @@ CBF = Range(44.4, 44.4 - 6.5, 44.4 + 6.5, "S5 Ito 2004: CBF 44.4 +/- 6.5 ml/100 
 CMRO2 = Range(3.3, 3.3 - 0.5, 3.3 + 0.5, "S5 Ito 2004: CMRO2 3.3 +/- 0.5 ml O2/100 ml/min")
 OEF = Range(0.44, 0.44 - 0.06, 0.44 + 0.06, "S5 Ito 2004: OEF 0.44 +/- 0.06")
 CBV = Range(3.8, 3.8 - 0.7, 3.8 + 0.7, "S5 Ito 2004: CBV 3.8 +/- 0.7 ml/100 ml")
+# Central from the largest study (S9, n = 94). The range is the union of the
+# three sources' mean +/- 1 SD: S6 0.263 +/- 0.037, S7 0.245, S9 0.28 +/- 0.04.
 VERTEBRAL_SHARE = Range(
-    0.263, 0.245, 0.263 + 0.037,
-    "S6 Malm 2021: VA 26.3 +/- 3.7 % of tCBF; low end S7 Ford 2005 derived 0.245",
+    0.28, 0.263 - 0.037, 0.28 + 0.04,
+    "S9 Zarrinkoob 2015: VA 28 +/- 4 % of tCBF; low end S6 Malm 2021 26.3 - 3.7 %",
 )
 
 # Observed values the model is compared with (never used as inputs, except
@@ -38,6 +40,11 @@ ROSSEN_LOC_S = (4.0, 10.0)            # S1/S2: "as little as 4 seconds, or at mo
 ROSSEN_RECOVERY_S = (3.0, 11.5)       # S1/S2: "ranging from 3 to 11.5 seconds"
 MITCHELL_FIXATION_MEAN_S = 9.5        # S3: 9.5 +/- 0.4 (SE) s, n = 16
 MITCHELL_FIXATION_SD_S = 0.4 * 4.0    # S3 derived: SE x sqrt(16)
+# S10 (secondary) cites the same Mitchell study differently; kept beside S3.
+MITCHELL_FIXATION_SECONDARY_S = 7.9            # S10: "7.9 s (range 6.3 to 12.2 s)"
+MITCHELL_FIXATION_SECONDARY_RANGE_S = (6.3, 12.2)
+ROSSEN_LOC_MEAN_SECONDARY_S = (6.41, 6.91)     # S10: secondary mean, reanalysis not opened
+ROSSEN_RECOVERY_MEAN_SECONDARY_S = 6.14        # S11: secondary mean, n = 28
 MITCHELL_RESIDUAL_VELOCITY = (8 / 45, 10 / 53)  # S3 derived: R and L MCA velocity ratios
 FIXATION_BEFORE_LOC_S = (0.5, 1.0)    # S1/S2: eyes fixed 1/2 to 1 s before LOC
 

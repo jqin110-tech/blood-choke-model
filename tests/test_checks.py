@@ -7,7 +7,9 @@ import itertools
 import numpy as np
 import pytest
 
-from choke_model.analysis import central_threshold, critical_flow_fraction, steady_o2_fraction, time_to_loc
+from choke_model.analysis import (
+    carotid_cut_for_flow, central_threshold, critical_flow_fraction, steady_o2_fraction, time_to_loc,
+)
 from choke_model.model import NO_CHOKE, Choke, simulate
 from choke_model.params import CBF, CBV, CMRO2, OEF, VERTEBRAL_SHARE, Params, SECONDS_PER_MINUTE
 
@@ -24,9 +26,12 @@ def test_steady_state_at_parameter_extremes(cbf: float, cmro2: float, oef: float
 
 
 def test_time_to_loc_falls_as_occlusion_rises() -> None:
+    """Above the weakest occlusion that causes LOC at all, more is always faster."""
     p = Params()
     theta = central_threshold(p)
-    times = np.array([time_to_loc(p, Choke(c), theta) for c in np.linspace(0.85, 1.0, 16)])
+    weakest = carotid_cut_for_flow(p, critical_flow_fraction(p, theta))
+    assert 0.0 < weakest < 1.0
+    times = np.array([time_to_loc(p, Choke(c), theta) for c in np.linspace(weakest + 0.01, 1.0, 16)])
     assert not np.isnan(times).any()
     assert np.all(np.diff(times) < 0)
 
