@@ -27,12 +27,15 @@ class Choke:
     carotid_occlusion: fraction of carotid flow removed (0 = none, 1 = all).
     vertebral_open: fraction of vertebral flow that still gets through
         (1 = vertebrals untouched, as assumed for a choke; A4).
+    ramp_s: seconds for flow to fall linearly from baseline to its reduced
+        level after t_on (0 = instant; A9). Release is always instant.
     """
 
     carotid_occlusion: float
     vertebral_open: float = 1.0
     t_on: float = 0.0
     t_off: float = np.inf
+    ramp_s: float = 0.0
 
     def flow_fraction(self, vertebral_share: float) -> float:
         """Fraction of baseline brain flow remaining while the occlusion is on."""
@@ -46,9 +49,13 @@ NO_CHOKE = Choke(carotid_occlusion=0.0)
 
 def flow(t: float, p: Params, choke: Choke) -> float:
     """Brain blood flow at time t (ml blood / s / 100 ml tissue)."""
-    if choke.t_on <= t < choke.t_off:
-        return p.cbf * choke.flow_fraction(p.vertebral_share)
-    return p.cbf
+    if not choke.t_on <= t < choke.t_off:
+        return p.cbf
+    fraction = choke.flow_fraction(p.vertebral_share)
+    since_on = t - choke.t_on
+    if since_on < choke.ramp_s:
+        fraction = 1.0 + (fraction - 1.0) * since_on / choke.ramp_s
+    return p.cbf * fraction
 
 
 def consumption(c: float, p: Params) -> float:
@@ -97,8 +104,9 @@ def simulate(
     below.direction = 0  # record crossings both ways
 
     # Split the integration at the switch times so the solver never steps
-    # across a jump in flow.
-    edges = sorted({0.0, t_end, *(x for x in (choke.t_on, choke.t_off) if 0 < x < t_end)})
+    # across a jump or kink in flow.
+    switches = (choke.t_on, choke.t_on + choke.ramp_s, choke.t_off)
+    edges = sorted({0.0, t_end, *(x for x in switches if 0 < x < t_end)})
     ts, ys, crossings = [], [], []
     y = [c0]
     for a, b in zip(edges[:-1], edges[1:]):

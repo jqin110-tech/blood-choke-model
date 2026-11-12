@@ -57,42 +57,56 @@ Notes: internal inconsistencies in the reprint (54 vs 53 St. Cloud subjects;
 S1 and S2 report the **same experiments**; they are not independent
 confirmations.
 
-## S3. Mitchell et al. (2012) — partial (abstract only)
+## S3. Mitchell et al. (2012) — opened (full text, accepted manuscript)
 
 - Mitchell JR, Roach DE, Tyberg JV, Belenkie I, Sheldon RS. *Mechanism of
   loss of consciousness during vascular neck restraint.* J Appl Physiol
   (1985). 2012;112(3):396–402. doi:10.1152/japplphysiol.00592.2011.
   PMID 22096121.
-- Link opened: https://pubmed.ncbi.nlm.nih.gov/22096121/ (abstract).
-  Full text at journals.physiology.org could **not** be opened.
+- What was opened: the accepted manuscript ("Articles in PresS. J Appl
+  Physiol (November 17, 2011)"), 30 pages, PDF supplied by Joshua on
+  12 Nov 2026 and read in full, including Tables 1–2 and Figures 2–6. It is
+  not the final typeset version, and the PDF is not redistributed here.
+  Abstract also at https://pubmed.ncbi.nlm.nih.gov/22096121/.
 
 | Quantity | Exact text | Value used |
 |---|---|---|
-| Subjects | "Twenty-four healthy police officers (age 35 ± 4 yr) were studied." | n = 24 |
-| Time to ocular fixation | "Ocular fixation occurred in 16 subjects [time 9.5 ± 0.4 (SE) s]." | **9.5 ± 0.4 s (SE), n = 16** |
-| Release | "VNR was released 1-2 s after ocular fixation." | subjects were released at about fixation, so full LOC was not always reached |
-| Carotid pressures | "Pressures over the right (R) and left (L) carotid arteries were 257 ± 22 and 146 ± 18 mmHg, respectively." | context only |
-| Middle cerebral artery velocity | "VNR decreased MCAVmean (R 45 ± 3 to 8 ± 4 cm/s; L 53 ± 2 to 10 ± 3 cm/s)" | used to bound the occlusion fraction (below) |
-| Blood pressure, HR | "Mean arterial pressure (MAP), dP/dt, and HR did not change significantly." | arterial supply pressure assumed unchanged |
-| Recovery | not reported in the abstract | — |
+| Subjects | "Twenty-four healthy police officers (27 to 40 years of age, 3 females)" | n = 24 |
+| Outcome groups (Table 2) | "Number 16 / 4 / 4" for Ocular Fixation / Subject Stop / Instructor Stop | 16 lost consciousness, 4 asked to stop, 4 never fixated |
+| Time to ocular fixation (Table 2) | "Time (sec) 9.5±0.4" ... "Data expressed as mean ± SEM." | **9.5 ± 0.4 s (SEM), n = 16** |
+| Individual fixation times (Figure 6) | 16 points plotted against neck circumference and BMI | lowest ≈ 6.3 s, highest ≈ 12.2 s (**read from the figure**, approximate) |
+| No fixation despite long hold (Table 2) | Instructor Stop: "Time (sec) 23.3±2.1"; protocol: "the instructor stopped after a prolonged period (~20 sec) with no ocular fixation" | **4 subjects: no LOC by 23.3 ± 2.1 s (SEM)** |
+| Fixation means unconsciousness | "1-2 sec after ocular fixation (indication of unconsciousness)" | the authors treat fixation as LOC |
+| Velocity fall, lost consciousness | "The substantial decrease in MCAVmean (Ocular Fixation Group - R 83%, L 80%)" | residual velocity R 0.17, L 0.20 |
+| Velocity fall, did not | "The 4 subjects who did not lose consciousness (Instructor Stop Group), had a 74% reduction of R MCAVmean, but only a 40% reduction in L MCAVmean." | residual velocity R 0.26, L 0.60 |
+| Zero flow | "11 subjects in the Ocular Fixation Group had no detectable flow on at least one side while 6 subjects had no detectable flow on both sides." | context |
+| Onset is not instant (Table 2) | "Time to Minimum MCAVmean (sec) 1.6±0.3" (Ocular Fixation, mean ± SEM) | **flow takes 1.6 ± 0.3 s (SEM) to reach its minimum** |
+| Blood pressure, HR | "Mean arterial pressure (MAP), dP/dt and HR did not change significantly." | supply pressure assumed unchanged (A4) |
+| Vertebral arteries | "Although it is possible that vertebral arterial blood supply was compromised during VNR, we find this unlikely." and "since we could not measure vertebral artery blood flow, we cannot exclude between-group differences" | vertebral flow assumed open, not measured |
+| Velocity is a stand-in for flow | "we used mean flow velocity as a surrogate for cerebral perfusion assuming laminar flow and that the vessel diameter did not change" | stated limitation, carried into ours |
+| Recovery, flow | "Upon release of VNR, R and L MCAVmean promptly returned to Baseline 2 levels" | flow restored promptly (A9) |
+| Recovery, consciousness | "recovery occurred almost immediately upon release with no observed or reported negative side effects" | **qualitative only; no recovery time in seconds** |
+| Velocity threshold, **secondary** | "Njemanze (13) determined that if mean flow velocity is reduced by more than 50%, unconsciousness would ensue." (Njemanze PC. Stroke 23: 1743–1747, 1992; not opened) | secondary: LOC if velocity < 0.5 of baseline on both sides |
+| Typical time, **secondary** | "the typical subject loses consciousness within 5 – 11 sec" (citing Reay 1982 and Rossen 1943) | context |
 
 **Derived:**
-- SD of fixation time = SE × √n = 0.4 × √16 = **1.6 s** (assumes the SE is
-  over the 16 subjects who reached fixation).
-- Residual MCA velocity: R 8/45 = **0.18**, L 10/53 = **0.19**. Velocity is
-  not flow (vessel diameter may change), so this is an *indicator*, not a
-  measurement, of residual flow. Mean velocities ± SD propagate to roughly
-  0.09–0.27 (R) and 0.13–0.25 (L) using mean ± 1 SE on the during-VNR value.
-- Ocular fixation is the endpoint measured here, not LOC. Combining with S1
-  (LOC ½–1 s after fixation) gives an *inferred* LOC time of about
-  **10–10.5 s**; this mixes two sources and is labelled as inferred.
+- SD of fixation time = SEM × √n = 0.4 × √16 = **1.6 s**. The range read from
+  Figure 6 (about 6.3 to 12.2 s) is consistent with that SD.
+- SD of time to minimum velocity = 0.3 × √16 = **1.2 s**.
+- Mean residual velocity across the two sides: lost consciousness
+  (0.17 + 0.20) / 2 = **0.185**; did not, (0.26 + 0.60) / 2 = **0.43**.
+  Velocity is not flow, and the middle cerebral arteries are only part of the
+  brain's supply, so these are *indicators* of whole-brain flow (A11).
+- Fixation is the endpoint measured. With S1 (LOC ½–1 s after fixation), LOC
+  is *inferred* at about 10–10.5 s; this mixes two sources.
 
-**Conflict (unresolved).** Whinnery & Forster 2013 (S10) cite this same paper
-as: "The mean time from vascular neck restraint ... to LOC defined by onset of
-eye fixation in 24 healthy volunteer police officers was 7.9 s (range 6.3 to
-12.2 s)". The abstract says 9.5 ± 0.4 (SE) s in 16 subjects. The full text
-could not be opened (HTTP 403 from two environments), so **both values are
-kept** and every comparison with Mitchell is reported against both.
+**Conflict resolved.** Whinnery & Forster 2013 (S10) cite this paper as
+"7.9 s (range 6.3 to 12.2 s)" in 24 officers. The full text gives 9.5 ± 0.4 s
+in 16 officers in the abstract, Table 2 and the limitations section; "7.9" does
+not appear anywhere in the manuscript. The range S10 quotes does match Figure
+6. So **9.5 s is used**, 6.3–12.2 s is kept as the individual range, and the
+7.9 s figure is treated as a citation error in S10. (Caveat: we read the
+accepted manuscript, not the final typeset article.)
 
 ## S4. Claassen, Thijssen, Panerai & Faraci (2021) — partial (first ~40% of text)
 
@@ -214,7 +228,7 @@ set for the Fick derivation (A8). The disagreement is a stated limitation.
 |---|---|---|
 | G-LOC time | "for onset rates ≥ 1.0 G/s, G-LOC will occur in a mean time of 9.10 s" | context only (different mechanism of flow loss) |
 | Rossen mean, **secondary** | "Rossen acutely arrested cerebral circulation in 74 humans using a cervical pressure cuff with the mean time of 6.41-6.91 s" | secondary mean LOC 6.41–6.91 s (from reanalyses not opened) |
-| Mitchell, **secondary** | "to LOC defined by onset of eye fixation in 24 healthy volunteer police officers was 7.9 s (range 6.3 to 12.2 s)" | secondary: 7.9 s, range 6.3–12.2 s (conflicts with S3) |
+| Mitchell, **secondary** | "to LOC defined by onset of eye fixation in 24 healthy volunteer police officers was 7.9 s (range 6.3 to 12.2 s)" | **not used**: the full text of S3 gives 9.5 s in 16 subjects; see S3, "Conflict resolved" |
 | Rossen DOI as printed | 10.1001/archneurpsyc.1943.02290230022002 | not opened |
 
 ## S11. Whinnery, Forster & Rogers (2014) — opened (full text). G-force study
@@ -255,10 +269,12 @@ set for the Fick derivation (A8). The disagreement is a stated limitation.
 | OEF | 0.44 ± 0.06 | S5 |
 | Cerebral blood volume (O2 store) | 3.8 ± 0.7 ml/100 ml | S5 |
 | Vertebral share of flow | central 0.28 (S9); range 0.226 – 0.32 = union of S6 (0.263 ± 0.037), S7 (0.245) and S9 (0.28 ± 0.04) | S9, S6, S7 |
-| Residual flow during neck restraint | ~0.09 – 0.27 of baseline (velocity indicator) | S3 (derived) |
+| Residual velocity during neck restraint | 0.17 (R), 0.20 (L) in those who lost consciousness; 0.26 (R), 0.60 (L) in those who did not | S3 |
 | Observed time to LOC, full arrest | 4 – 10 s | S1/S2 |
-| Observed time to ocular fixation, neck restraint | 9.5 ± 1.6 s (SD, derived) | S3 |
-| Same study, as cited by S10 (**secondary, conflicting**) | 7.9 s, range 6.3 – 12.2 s | S10 |
+| Observed time to ocular fixation, neck restraint | 9.5 ± 1.6 s (SD, derived); individual range ≈ 6.3 – 12.2 s (figure) | S3 |
+| Observed: no LOC with weaker velocity fall | 4 subjects, none by 23.3 ± 2.1 s (SEM) | S3 |
+| Time for flow to reach its minimum | 1.6 ± 1.2 s (SD, derived) | S3 |
+| Velocity threshold for LOC (**secondary**) | < 0.5 of baseline, both sides | Njemanze 1992 via S3 |
 | Rossen means (**secondary**) | LOC 6.41 – 6.91 s; recovery 6.14 s | S10, S11 |
 | Observed recovery | 3 – 11.5 s | S1/S2 |
 
@@ -268,8 +284,8 @@ set for the Fick derivation (A8). The disagreement is a stated limitation.
    second search from an environment with wider access. Lennox, Gibbs & Gibbs
    (1935) is the best lead and is not reachable. The threshold stays fitted
    (ASSUMPTIONS.md, A6).
-2. **Mitchell (2012) full text** (HTTP 403 from two environments). Needed to
-   resolve the 9.5 s vs 7.9 s conflict, and for LOC and recovery times.
+2. **Recovery time after a choke, in seconds.** Mitchell (S3) says only
+   "almost immediately". Rossen (S1/S2) remains the only timed recovery data.
 3. **Kety & Schmidt (1948)** values: citations verified, PDFs not reachable.
 4. **Independent arterial O2 content** to check the derived 0.169 ml/ml.
 5. **Rossen (1943) original**: only the reprint (S1) and the review (S2) were

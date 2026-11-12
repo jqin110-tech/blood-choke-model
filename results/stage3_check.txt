@@ -5,13 +5,23 @@ Stage 3 checks (nominal parameters)
 [monotonic] with vertebrals open, LOC needs carotid cut >= 0.84 (central threshold 0.241)
 
 [Rossen 1943, IN-SAMPLE] observed LOC 4-10 s; matches by construction (threshold was fitted to it).
-[Mitchell 2012, HELD OUT] observed ocular fixation 9.5 +/- 1.6 s (mean +/- SD, derived); model fixation = model LOC - 0.5-1.0 s
-  the same study as cited by Whinnery & Forster 2013 (S10, secondary, CONFLICTING): 7.9 s, range 6.3-12.2 s
-  scenario                                  | flow left | fixation, central thr | fixation over thr range | gap to 9.5 s | gap to 7.9 s
-  A: total flow = MCA velocity ratio, R     |     0.178 |   6.7 to  7.2 s       | 2.3 s to never          | -2.6 s       | -1.0 s
-  A: total flow = MCA velocity ratio, L     |     0.189 |   6.9 to  7.4 s       | 2.4 s to never          | -2.4 s       | -0.8 s
-  B: carotids fully cut, vertebrals open    |     0.280 |   9.5 to 10.0 s       | 3.0 s to never          | +0.2 s       | +1.8 s
+
+[Mitchell 2012, HELD OUT, test 1] 16 subjects who lost consciousness
+  observed ocular fixation: 9.5 +/- 1.6 s (mean +/- SD, derived); individual range 6.3-12.2 s (read from Figure 6)
+  model fixation = model LOC - 0.75 s (S1: fixation 0.5-1 s before LOC)
+  'ramp' = flow falls over 1.6 s (measured time to minimum velocity), not instantly
+  reading of flow left                                  | flow | instant | gap    | ramp    | gap    | ramp, over threshold range
+  A  whole brain falls like the MCA velocity            | 0.18 | 7.1 s   | -2.4 s | 7.9 s   | -1.6 s | 3.4 s to never
+  B  carotids shut, vertebrals normal                   | 0.28 | 9.7 s   | +0.2 s | 10.6 s  | +1.1 s | 4.1 s to never
+  C  carotids pass the MCA fraction, vertebrals normal  | 0.41 | never   |   n/a  | never   |   n/a  | 5.6 s to never
   observed band (mean +/- SD): 7.9 to 11.1 s
 
-[Claassen 2021, independent] function lost below ~22/50 = 0.44 of normal flow
-  model: lowest sustained flow that never causes LOC = 0.40 (central), 0.01 to 0.64 over the fitted threshold range
+[Mitchell 2012, HELD OUT, test 2] 4 subjects with no fixation after 23.3 s
+  reading of flow left                                  | flow | model LOC (central) | agrees with 'no LOC'?
+  A  whole brain falls like the MCA velocity            | 0.43 | never               | True
+  C  carotids pass the MCA fraction, vertebrals normal  | 0.59 | never               | True
+
+[flow threshold, independent of the fit]
+  model: lowest sustained flow that never causes LOC = 0.40 of normal (central), 0.01 to 0.64 over the fitted threshold range
+  Claassen 2021 (S4): function lost below ~22/50 = 0.44 of normal flow
+  Njemanze 1992 (secondary, via S3): LOC if velocity falls below 0.50 of baseline

@@ -53,3 +53,18 @@ def test_critical_flow_is_consistent_with_steady_state() -> None:
     theta = central_threshold(p)
     q = critical_flow_fraction(p, theta)
     assert steady_o2_fraction(p, q) == pytest.approx(theta, rel=1e-6)
+
+
+def test_onset_ramp_delays_loc_by_less_than_the_ramp() -> None:
+    """A gradual onset is slower than an instant one, but by less than the ramp."""
+    p = Params()
+    theta = central_threshold(p)
+    instant = time_to_loc(p, Choke(1.0), theta)
+    ramped = time_to_loc(p, Choke(1.0, ramp_s=1.6), theta)
+    assert instant < ramped < instant + 1.6
+
+
+def test_tiny_ramp_matches_instant_onset() -> None:
+    p = Params()
+    theta = central_threshold(p)
+    assert time_to_loc(p, Choke(1.0, ramp_s=1e-6), theta) == pytest.approx(time_to_loc(p, Choke(1.0), theta), abs=1e-4)

@@ -58,7 +58,7 @@ def carotid_cut_for_flow(p: Params, flow_fraction: float) -> float:
     return 1.0 - (flow_fraction - v) / (1.0 - v)
 
 
-def choke_for_flow(p: Params, flow_fraction: float) -> Choke:
+def choke_for_flow(p: Params, flow_fraction: float, ramp_s: float = 0.0) -> Choke:
     """A choke that leaves the given total flow fraction.
 
     Above the vertebral share, only carotid flow is cut (A4). Below it, the
@@ -66,5 +66,5 @@ def choke_for_flow(p: Params, flow_fraction: float) -> Choke:
     """
     v = p.vertebral_share
     if flow_fraction >= v:
-        return Choke(carotid_occlusion=carotid_cut_for_flow(p, flow_fraction))
-    return Choke(carotid_occlusion=1.0, vertebral_open=flow_fraction / v)
+        return Choke(carotid_occlusion=carotid_cut_for_flow(p, flow_fraction), ramp_s=ramp_s)
+    return Choke(carotid_occlusion=1.0, vertebral_open=flow_fraction / v, ramp_s=ramp_s)

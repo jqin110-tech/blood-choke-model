@@ -37,8 +37,6 @@ No opened source gives θ as an oxygen level (SOURCES.md, Gap 1). Following
 Joshua's decision, θ is **fitted** to the Rossen full-occlusion times
 (S1/S2: 4–10 s) and will be replaced if a measured value is found. The
 Mitchell 2012 data (S3) are **not** used in the fit, so they are a fair test.
-Two published versions of the Mitchell timing exist (9.5 s in the abstract,
-7.9 s as cited by S10); the model is compared with both.
 
 **A7. The Rossen cuff blocked the carotids fully and the vertebrals
 partly.** S1 says the cuff "did not completely stop the blood supply in the
@@ -51,10 +49,27 @@ Ca = CMRO2 / (OEF × CBF) (S5 derived, about 0.169 ml O2/ml). This makes
 every sampled parameter set start at a true steady state. It has not been
 checked against an independently measured Ca (Gap 4).
 
-**A9. Flow changes instantly.** The occlusion switches on and off as a
-step. S2 reports that the cuff inflated "in one-eighth of a second", which
-supports this for Rossen. No onset time is sourced for S3.
+**A9. Flow changes as a step, or as a straight-line ramp.** For Rossen the
+occlusion is a step: S2 reports that the cuff inflated "in one-eighth of a
+second". For neck restraint, S3 measured 1.6 ± 0.3 s (SEM) for velocity to
+reach its minimum, so the Mitchell comparison is reported both with a step
+and with flow falling in a straight line over 1.6 s. The straight-line shape
+is our assumption; only the duration is sourced. Release is always a step
+(S3: velocity "promptly returned" to baseline).
 
 **A10. Nothing else responds.** No autoregulation, no change in heart rate,
 breathing or blood oxygen during the event. S1 reports no marked pulse change
 for arrests up to 30 s, and S3 reports no significant change in HR or MAP.
+
+**A11. Whole-brain flow during neck restraint is not known, so three
+readings are kept.** S3 measured velocity in the middle cerebral arteries
+only, which are fed mainly by the carotids, and could not measure vertebral
+flow. Velocity is also not flow (S3 lists this as a limitation). The model
+needs one whole-brain number (A1), so stage 3 reports three: (A) the whole
+brain falls like the measured velocity, the lowest reading; (B) carotids
+shut and vertebrals normal; (C) the carotids pass the measured fraction and
+the vertebrals are normal, the highest reading. No source says which is
+right. Under reading C the model predicts no loss of consciousness in
+subjects who did lose it, which points at A1: a one-box model cannot
+represent the front of the brain running out of oxygen while the back is
+still supplied.

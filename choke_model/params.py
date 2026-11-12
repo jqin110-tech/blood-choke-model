@@ -38,14 +38,18 @@ VERTEBRAL_SHARE = Range(
 # the Rossen LOC times, which are used to FIT the threshold; see A6).
 ROSSEN_LOC_S = (4.0, 10.0)            # S1/S2: "as little as 4 seconds, or at most 10 seconds"
 ROSSEN_RECOVERY_S = (3.0, 11.5)       # S1/S2: "ranging from 3 to 11.5 seconds"
-MITCHELL_FIXATION_MEAN_S = 9.5        # S3: 9.5 +/- 0.4 (SE) s, n = 16
-MITCHELL_FIXATION_SD_S = 0.4 * 4.0    # S3 derived: SE x sqrt(16)
-# S10 (secondary) cites the same Mitchell study differently; kept beside S3.
-MITCHELL_FIXATION_SECONDARY_S = 7.9            # S10: "7.9 s (range 6.3 to 12.2 s)"
-MITCHELL_FIXATION_SECONDARY_RANGE_S = (6.3, 12.2)
-ROSSEN_LOC_MEAN_SECONDARY_S = (6.41, 6.91)     # S10: secondary mean, reanalysis not opened
-ROSSEN_RECOVERY_MEAN_SECONDARY_S = 6.14        # S11: secondary mean, n = 28
-MITCHELL_RESIDUAL_VELOCITY = (8 / 45, 10 / 53)  # S3 derived: R and L MCA velocity ratios
+# Mitchell 2012 (S3), full text. Held out from the threshold fit.
+MITCHELL_FIXATION_MEAN_S = 9.5                   # Table 2: 9.5 +/- 0.4 (SEM) s, n = 16
+MITCHELL_FIXATION_SD_S = 0.4 * 4.0               # derived: SEM x sqrt(16)
+MITCHELL_FIXATION_RANGE_S = (6.3, 12.2)          # individual points, read from Figure 6
+MITCHELL_VELOCITY_LEFT_LOC = (1 - 0.83, 1 - 0.80)     # R, L: "R 83%, L 80%" decrease
+MITCHELL_VELOCITY_LEFT_NO_LOC = (1 - 0.74, 1 - 0.40)  # R, L: "74% ... only a 40% reduction"
+MITCHELL_NO_LOC_HOLD_S = 23.3                    # Table 2: Instructor Stop, 23.3 +/- 2.1 (SEM) s, n = 4
+MITCHELL_TIME_TO_MIN_VELOCITY_S = 1.6            # Table 2: 1.6 +/- 0.3 (SEM) s, n = 16
+MITCHELL_TIME_TO_MIN_VELOCITY_SD_S = 0.3 * 4.0   # derived: SEM x sqrt(16)
+NJEMANZE_VELOCITY_THRESHOLD = 0.5                # secondary, via S3: LOC if velocity falls > 50 %
+ROSSEN_LOC_MEAN_SECONDARY_S = (6.41, 6.91)       # S10: secondary mean, reanalysis not opened
+ROSSEN_RECOVERY_MEAN_SECONDARY_S = 6.14          # S11: secondary mean, n = 28
 FIXATION_BEFORE_LOC_S = (0.5, 1.0)    # S1/S2: eyes fixed 1/2 to 1 s before LOC
 
 
