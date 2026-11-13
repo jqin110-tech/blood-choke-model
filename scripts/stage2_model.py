@@ -40,6 +40,7 @@ def main() -> None:
         f"Arterial O2 content Ca (derived)  = {p.arterial_o2:.4f} ml O2/ml blood",
         f"Baseline brain O2 C0              = {p.baseline_o2:.4f} ml O2/100 ml tissue",
         f"Store / consumption, C0 / CMRO2    = {p.baseline_o2 / p.cmro2:.2f} s",
+        f"Consumption half-saturation kappa  = {p.kappa:g} of baseline O2 (A5, NO SOURCE)",
         "",
         "observed LOC (s) | vertebral flow left | fitted threshold C/C0",
     ]

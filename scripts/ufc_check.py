@@ -43,7 +43,7 @@ def main() -> None:
     lo_theta, hi_theta = min(corners.values()), max(corners.values())
     lo, hi = UFC_LOC_CI95_S
     out = ["UFC check (nominal parameters)", ""]
-    out.append(f"[UFC fights, S13, context] {UFC_CHOKE_FINISHES} fight-ending chokes = "
+    out.append(f"[UFC fights, Stellpflug 2022, S13, context] {UFC_CHOKE_FINISHES} fight-ending chokes = "
                f"{UFC_CHOKE_SHARE_OF_OUTCOMES:.1%} of fight outcomes; {UFC_CHOKE_LOC_SHARE:.0%} of them ended in "
                f"loss of consciousness; the rear naked choke was {UFC_RNC_SHARE:.1%} of them.")
     out.append("")
@@ -88,7 +88,7 @@ def main() -> None:
     ax.set_yticks(range(len(names)), names)
     ax.set_xlabel("time from choke established to loss of consciousness (s)")
     ax.set_xlim(4, 13)
-    ax.legend(fontsize=8, loc="lower right")
+    ax.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.16), ncol=2, frameon=False)   # below the plot, clear of the points
     ax.set_title("Chokes in UFC fights vs the model (model gives one time for all types)", fontsize=10)
     fig.tight_layout()
     fig.savefig(ROOT / "figures" / "ufc_check.png", dpi=150)

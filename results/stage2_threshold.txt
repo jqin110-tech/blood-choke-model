@@ -2,6 +2,7 @@ Stage 2: threshold fitted to Rossen et al. 1943 (S1/S2), nominal parameters
 Arterial O2 content Ca (derived)  = 0.1689 ml O2/ml blood
 Baseline brain O2 C0              = 0.3595 ml O2/100 ml tissue
 Store / consumption, C0 / CMRO2    = 6.54 s
+Consumption half-saturation kappa  = 0.1 of baseline O2 (A5, NO SOURCE)
 
 observed LOC (s) | vertebral flow left | fitted threshold C/C0
              4.0 |                 0.0 | 0.4148

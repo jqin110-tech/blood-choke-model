@@ -1,6 +1,6 @@
 UFC check (nominal parameters)
 
-[UFC fights, S13, context] 904 fight-ending chokes = 15.5% of fight outcomes; 11% of them ended in loss of consciousness; the rear naked choke was 49.1% of them.
+[UFC fights, Stellpflug 2022, S13, context] 904 fight-ending chokes = 15.5% of fight outcomes; 11% of them ended in loss of consciousness; the rear naked choke was 49.1% of them.
 
 [Stellpflug 2020, S12, HELD OUT, test 3] 81 chokes to LOC in UFC fights, timed from video
   observed: mean 9.0 s from 'the establishment of a choke' to LOC, 95% CI 8.3-9.9 s
