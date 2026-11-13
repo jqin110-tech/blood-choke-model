@@ -31,6 +31,26 @@ p { margin: 0; }
 .stage { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 18px; align-items: start; }
 .scan { background: #000; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 canvas { display: block; width: 100%; height: auto; }
+.views { display: flex; gap: 8px; align-items: center; padding: 8px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.views button { width: auto; padding: 6px 12px; font-size: 13px; }
+.views button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.views .hint { margin-left: auto; font-size: 12.5px; color: var(--muted); }
+.stage3d {
+  position: relative; aspect-ratio: 800 / 900; overflow: hidden; touch-action: pan-y; cursor: grab;
+  background: radial-gradient(circle at 55% 42%, #0c1924 0%, #060c13 55%, #010203 100%);
+}
+.stage3d:active { cursor: grabbing; }
+.stage3d canvas { position: absolute; inset: 0; height: 100%; }
+.stage3d::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 52% 46%, transparent 48%, rgba(0, 0, 0, 0.55) 100%); }
+.stage3d .caption { position: absolute; z-index: 2; left: 14px; pointer-events: none; color: rgba(150, 190, 220, 0.75); font: 500 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.04em; }
+.overlay { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+.overlay line { stroke: rgba(160, 190, 214, 0.65); stroke-width: 1; }
+.overlay circle { fill: rgba(190, 214, 234, 0.95); }
+.overlay text { fill: rgba(214, 228, 240, 0.97); font: 500 14px Inter, system-ui, sans-serif; paint-order: stroke; stroke: rgba(2, 5, 8, 0.85); stroke-width: 3.5px; }
+.overlay text.sub { fill: rgba(143, 161, 177, 0.95); font-weight: 400; font-size: 12.5px; }
+.tag3d { position: absolute; z-index: 2; transform: translate(-50%, -50%); padding: 6px 12px; border-radius: 6px; white-space: nowrap; pointer-events: none;
+  background: rgba(4, 8, 12, 0.84); border: 1px solid rgba(160, 190, 214, 0.5); font-weight: 600; font-size: 15px; }
+[hidden] { display: none !important; }
 .side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .clock { font-family: var(--font-display); font-size: 44px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
@@ -60,7 +80,38 @@ legend { padding: 0; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
 .notes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .notes ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--muted); }
 .notes strong { color: var(--ink); font-weight: 600; }
+.ufc { position: relative; --name: 190px; --val: 52px; display: flex; flex-direction: column; }
+.ufc-group { position: relative; z-index: 1; background: var(--panel); font-size: 12.5px; color: var(--muted); padding: 10px 0 4px; }
+.ufc-row { display: grid; grid-template-columns: var(--name) minmax(0, 1fr) var(--val); gap: 10px; align-items: center; height: 26px; font-size: 14px; color: var(--muted); }
+.ufc-row .v { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.ufc-row .n { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ufc-row.passed { color: var(--ink); }
+.track { position: relative; height: 100%; border-bottom: 1px solid var(--line); }
+.track i { position: absolute; top: 50%; }
+.track .ci { height: 6px; margin-top: -3px; border-radius: 3px; background: rgba(188, 214, 234, 0.3); }
+.track .dot { width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: #06090d; border: 2px solid var(--bone); box-sizing: border-box; }
+.ufc-row.passed .dot { background: var(--bone); }
+.ufc-lines { position: absolute; top: 0; bottom: 22px; left: calc(var(--name) + 10px); right: calc(var(--val) + 10px); pointer-events: none; }
+.ufc-lines i { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid var(--blood); }
+.ufc-lines i.b { border-left-style: dashed; opacity: 0.75; }
+.ufc-lines i.now { border-left-color: #fff; }
+.axis { position: relative; height: 22px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.axis span { position: absolute; top: 5px; transform: translateX(-50%); white-space: nowrap; }
+.key { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
+.key span { display: inline-flex; align-items: center; gap: 7px; }
+.key i { display: inline-block; flex: none; }
+.key .k-dot { width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--bone); box-sizing: border-box; }
+.key .k-ci { width: 18px; height: 6px; border-radius: 3px; background: rgba(188, 214, 234, 0.3); }
+.key .k-a, .key .k-b, .key .k-now { width: 0; height: 14px; border-left: 2px solid var(--blood); }
+.key .k-b { border-left-style: dashed; opacity: 0.75; }
+.key .k-now { border-left-color: #fff; }
+.prose { color: var(--muted); font-size: 14px; max-width: 86ch; }
+.prose strong { color: var(--ink); font-weight: 600; }
 @media (max-width: 860px) {
+  .ufc { --name: 128px; --val: 46px; }
+  .ufc-row { font-size: 13px; gap: 8px; }
+  .ufc-lines { left: calc(var(--name) + 8px); right: calc(var(--val) + 8px); }
+  .axis span:nth-child(even) { display: none; }
   .stage { grid-template-columns: minmax(0, 1fr); }
   .side { display: contents; }
   #panel-run { order: 1; }
@@ -77,12 +128,22 @@ legend { padding: 0; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
 <div class="wrap">
   <header style="display:flex;flex-direction:column;gap:10px">
     <h1>Blood Choke X-Ray</h1>
-    <p class="lede">What the model says happens inside the head when the carotid arteries are squeezed shut: blood stops reaching the front of the brain, its oxygen runs down in seconds, and it drops below the level the model treats as consciousness.</p>
+    <p class="lede">What the model says happens inside the head during a blood choke, the kind that ends UFC fights. The carotid arteries are squeezed shut, blood stops reaching the front of the brain, its oxygen runs down in seconds, and it drops below the level the model treats as consciousness.</p>
     <p class="notice"><strong>Educational model only.</strong> Not medical advice, and not for safety or training decisions. The drawing is a schematic, not a real scan, and it shows physiology, not technique.</p>
   </header>
 
   <div class="stage">
-    <div class="scan"><canvas id="scan" width="800" height="900" role="img" aria-label="Schematic x-ray of a head and neck showing blood flow to the brain"></canvas></div>
+    <div class="scan">
+      <div class="views" id="views" role="group" aria-label="View">
+        <button type="button" id="view-3d" aria-pressed="true">3D model</button>
+        <button type="button" id="view-film" aria-pressed="false">Side film</button>
+        <span class="hint" id="hint">Drag to rotate</span>
+      </div>
+      <div class="stage3d" id="stage3d">
+        <div class="caption" style="top:12px">3D MODEL / SCHEMATIC, NOT A REAL SCAN, NOT TO SCALE</div>
+      </div>
+      <canvas id="scan" width="800" height="900" role="img" aria-label="Schematic x-ray of a head and neck showing blood flow to the brain" hidden></canvas>
+    </div>
 
     <div class="side">
       <section class="panel" id="panel-run">
@@ -119,6 +180,21 @@ legend { padding: 0; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
     </div>
   </div>
 
+  <section class="panel" id="ufc">
+    <h2>Chokes in UFC fights</h2>
+    <p class="prose" id="ufc-lede"></p>
+    <div class="ufc" id="ufc-rows"></div>
+    <div class="key">
+      <span><i class="k-dot"></i>measured average</span>
+      <span><i class="k-ci"></i>95% interval of that average</span>
+      <span><i class="k-a"></i><span id="ufc-key-a"></span></span>
+      <span><i class="k-b"></i><span id="ufc-key-b"></span></span>
+      <span><i class="k-now"></i>the clock above, while the arteries are compressed</span>
+    </div>
+    <p class="prose" id="ufc-model"></p>
+    <p class="prose"><strong>Why every choke gets the same prediction.</strong> No study we could open measures how much each choke squeezes each artery, so the model cannot tell one from another. The fight study itself found that chokes around the neck alone and chokes with one of the fighter's arms trapped inside took the same time. The times for single choke types come from second-hand write-ups of that study, without ranges, and those write-ups report no significant difference between types. Anything that works by closing the airway instead of the arteries is outside this model.</p>
+  </section>
+
   <div class="notes">
     <section class="panel">
       <h2>What is computed</h2>
@@ -131,7 +207,7 @@ legend { padding: 0; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
     <section class="panel">
       <h2>What is illustration only</h2>
       <ul>
-        <li><strong>The anatomy.</strong> It is a drawing made for this page, not a real scan and not to scale. The folds of the brain, the fine arteries and the bone detail are decoration, and many of them are placed at random. The left and right arteries overlap in this side view.</li>
+        <li><strong>The anatomy.</strong> It is a drawing made for this page, not a real scan and not to scale. The folds of the brain, the fine arteries and the bone detail are decoration, and many of them are placed at random. The 3D model is built from the side drawing, so how wide and how deep each part is was made up too.</li>
         <li><strong>Which parts go dark.</strong> The brain is split into just two zones, a front fed by the carotids and a back fed by the vertebrals. Real brains share supply through connecting arteries, and the model cannot say which exact regions fail first.</li>
         <li><strong>The moving dots and fading arteries.</strong> Faster dots and brighter arteries mean more flow. They are not real blood speeds, and the fine arteries are not individually modelled.</li>
         <li><strong>The eye.</strong> It shuts when the model's state is unconscious and opens when it is conscious again. It is a cue for that state, not a result of its own. The sign the studies timed is the eyes becoming fixed (Mitchell 2012), which the drawing does not show.</li>
@@ -141,12 +217,14 @@ legend { padding: 0; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 const CONFIG = /*__CONFIG__*/;
 /*__MODEL__*/
+/*__HEAD3D__*/
 (() => {
   "use strict";
-  const X = CONFIG.xray, DT = 0.01;
+  const X = CONFIG.xray, U = X.ufc, DT = 0.01;
   const $ = (id) => document.getElementById(id);
   const pct = (x) => Math.round(100 * x) + "%";
   const canvas = $("scan"), ctx = canvas.getContext("2d");
@@ -209,7 +287,7 @@ const CONFIG = /*__CONFIG__*/;
       if (crossedAt === null && before >= X.threshold && front < X.threshold) {
         crossedAt = now;
         addLog(now, "The front of the brain drops below the model's threshold. Model: unconscious.",
-          `Measured: eyes fixed at ${X.fixationMean} ± ${X.fixationSd.toFixed(1)} s, about ${X.fixationBeforeLoc[0]} to ${X.fixationBeforeLoc[1]} s before unconsciousness (Mitchell 2012).`);
+          `Measured: eyes fixed at ${X.fixationMean} ± ${X.fixationSd.toFixed(1)} s, about ${X.fixationBeforeLoc[0]} to ${X.fixationBeforeLoc[1]} s before unconsciousness (Mitchell 2012). In UFC fights: unconscious ${U.measured[0].t[0].toFixed(1)} s after the choke was set, on average (Stellpflug 2020).`);
       }
       if (crossedAt !== null && recoveredAt === null && before < X.threshold && front >= X.threshold) {
         recoveredAt = now;
@@ -244,6 +322,37 @@ const CONFIG = /*__CONFIG__*/;
     $("log").innerHTML = log.length
       ? log.map((e) => `<li><span class="t">${e.t.toFixed(1)} s</span> ${e.text}${e.measured ? `<span class="measured">${e.measured}</span>` : ""}</li>`).join("")
       : `<li>${scenario.intro}</li>`;
+    renderUfc();
+  }
+
+  // ---- chokes in UFC fights -------------------------------------------------
+  // Measured times from fight video, with the model's one prediction and the
+  // running clock drawn across them. Every number comes from the config.
+  const UFC_AXIS_S = [4, 13];      // the strip shows this stretch of seconds
+  const along = (t) => (100 * (t - UFC_AXIS_S[0]) / (UFC_AXIS_S[1] - UFC_AXIS_S[0])).toFixed(2) + "%";
+  const span = (seconds) => (100 * seconds / (UFC_AXIS_S[1] - UFC_AXIS_S[0])).toFixed(2) + "%";
+  const ufcRow = (name, mean, low, high) => `<div class="ufc-row" data-t="${mean}"><span class="n">${name}</span><span class="track">`
+    + (low === undefined ? "" : `<i class="ci" style="left:${along(low)};width:${span(high - low)}"></i>`)
+    + `<i class="dot" style="left:${along(mean)}"></i></span><span class="v">${mean.toFixed(1)} s</span></div>`;
+  $("ufc-rows").innerHTML = `<div class="ufc-group">Timed from fight video (Stellpflug 2020)</div>`
+    + U.measured.map((m) => ufcRow(m.name, ...m.t)).join("")
+    + `<div class="ufc-group">Each choke type, same study as reported second-hand (no ranges given)</div>`
+    + U.byType.map((m) => ufcRow(m.name, m.t)).join("")
+    + `<div class="ufc-row axis-row"><span></span><span class="axis">`
+    + [4, 6, 8, 10, 12].map((t) => `<span style="left:${along(t)}">${t} s</span>`).join("") + `</span><span></span></div>`
+    + `<div class="ufc-lines"><i style="left:${along(U.model.A)}"></i><i class="b" style="left:${along(U.model.B)}"></i><i class="now" id="ufc-now" hidden></i></div>`;
+  $("ufc-lede").innerHTML = `Chokes end ${(100 * U.shareOfOutcomes).toFixed(1)}% of UFC fights (${U.finishes} fights), and the rear naked choke is ${(100 * U.rncShare).toFixed(0)}% of them. Most end with a tap; ${(100 * U.locShare).toFixed(0)}% end with the fighter unconscious (Stellpflug 2022). When ${U.n} of those were timed from video, the fighter went out <strong>${U.measured[0].t[0].toFixed(1)} s</strong> after the choke was set, on average, with a 95% interval of ${U.measured[0].t[1]} to ${U.measured[0].t[2]} s (Stellpflug 2020).`;
+  $("ufc-key-a").textContent = `model: ${U.model.A.toFixed(1)} s`;
+  $("ufc-key-b").textContent = `model if the vertebral arteries keep normal flow: ${U.model.B.toFixed(1)} s`;
+  $("ufc-model").innerHTML = `<strong>What the model says.</strong> It puts the brain below its threshold at ${U.model.A.toFixed(1)} s, inside the measured interval, if the whole brain loses flow the way the measured arteries did. If only the carotid arteries close and the vertebral arteries keep their normal flow, it says ${U.model.B.toFixed(1)} s, which is too slow. The model was not tuned to these fights. Its flow numbers come from a laboratory study of neck restraint (Mitchell 2012), because nobody has measured blood flow during a fight.`;
+  const ufcRows = [...document.querySelectorAll("#ufc-rows .ufc-row[data-t]")];
+  function renderUfc() {
+    const now = $("ufc-now");
+    if (!now) return;
+    const t = phase === "idle" ? null : phase === "held" ? steps * DT : releasedAt;
+    now.hidden = t === null || t < UFC_AXIS_S[0] || t > UFC_AXIS_S[1];
+    if (t !== null) now.style.left = along(t);
+    for (const row of ufcRows) row.classList.toggle("passed", t !== null && t >= Number(row.dataset.t));
   }
 
   $("choices").innerHTML = X.scenarios.map((s, i) =>
@@ -293,7 +402,8 @@ const CONFIG = /*__CONFIG__*/;
     return [x + 0.12 * (g - 40 * (1 - Math.exp(-g / 40))), 400 - g];
   }
   const curve = (pts, closed, per) => spline(pts.map(warp), closed, per);
-  const shape = (pts) => toPath(curve(pts, true), true);
+  // A closed outline as a canvas path. The points are kept on it for the 3D view.
+  const shape = (pts) => { const poly = curve(pts, true), path = toPath(poly, true); path.poly = poly; return path; };
   function measure(poly) {
     const d = [0];
     for (let i = 1; i < poly.length; i++) d.push(d[i - 1] + Math.hypot(poly[i][0] - poly[i - 1][0], poly[i][1] - poly[i - 1][1]));
@@ -389,6 +499,7 @@ const CONFIG = /*__CONFIG__*/;
 
   // The folds of the cerebrum: a few named ones placed by hand, the rest grown
   // at random so that they keep an even spacing. Decoration only.
+  const FOLD_BOX = { x: 245, y: 120, size: 450 };     // square of the drawing that the 3D view samples
   function buildCortex() {
     const rand = rng(41);
     const edge = scallop(CEREBRUM_BASE, rand, 27, 5.5);
@@ -472,10 +583,29 @@ const CONFIG = /*__CONFIG__*/;
       mark(poly, GAP);
       minor.push(spline(poly.filter((_, i) => i % 2 === 0 || i === poly.length - 1), false, 3));
     }
-    const majorPath = new Path2D(), minorPath = new Path2D();
+    // The 3D view wraps this pattern round the brain, so it also needs folds
+    // beyond the side outline. They are never drawn in the film view.
+    const beyond = [];
+    for (let attempt = 0; attempt < 14000; attempt++) {
+      const x = FOLD_BOX.x + rand() * FOLD_BOX.size, y = FOLD_BOX.y + rand() * FOLD_BOX.size;
+      if (!free(x, y) || inside(outline, x, y)) continue;
+      let a = rand() * 6.283, bend = 0, px = x, py = y;
+      const poly = [[x, y]];
+      for (let s = 0; s < 30 + rand() * 90; s += 3) {
+        bend = Math.max(-0.3, Math.min(0.3, bend * 0.9 + (rand() - 0.5) * 0.2)); a += bend;
+        px += 3 * Math.cos(a); py += 3 * Math.sin(a);
+        if (px < FOLD_BOX.x || py < FOLD_BOX.y || px > FOLD_BOX.x + FOLD_BOX.size || py > FOLD_BOX.y + FOLD_BOX.size || !free(px, py) || inside(outline, px, py)) break;
+        poly.push([px, py]);
+      }
+      if (poly.length < 5) continue;
+      mark(poly, GAP);
+      beyond.push(spline(poly.filter((_, i) => i % 2 === 0 || i === poly.length - 1), false, 3));
+    }
+    const majorPath = new Path2D(), minorPath = new Path2D(), beyondPath = new Path2D();
     for (const m of major) toPath(m, false, majorPath);
     for (const m of minor) toPath(m, false, minorPath);
-    return { outline, majorPath, minorPath };
+    for (const m of beyond) toPath(m, false, beyondPath);
+    return { outline, majorPath, minorPath, beyondPath };
   }
   const CORTEX = buildCortex();
   const CEREBRUM = CORTEX.outline;
@@ -501,32 +631,33 @@ const CONFIG = /*__CONFIG__*/;
     }
     return toPath(left.concat(right.reverse()), true);
   }
-  const vessel = (zone, width, pts, taper = 0.45) => {
+  // `role` only matters to the 3D view: it says how deep in the head the artery runs.
+  const vessel = (zone, width, pts, taper = 0.45, role = "surface") => {
     const poly = curve(pts, false); const d = measure(poly), length = d[d.length - 1];
-    const v = { zone, width, poly, d, length, path: toPath(poly, false), widthAt: (s) => width * (1 - (1 - taper) * (s / length)) };
+    const v = { zone, width, role, poly, d, length, path: toPath(poly, false), widthAt: (s) => width * (1 - (1 - taper) * (s / length)) };
     v.tube = ribbon(v);
     return v;
   };
   const VESSELS = [
-    vessel("front", 7.0, [[414, 905], [413, 820], [414, 760], [418, 700], [424, 640], [432, 590], [438, 548], [434, 516], [418, 496], [404, 480], [410, 462], [400, 448], [386, 436]], 0.7),
-    vessel("front", 3.8, [[386, 436], [356, 416], [322, 384], [300, 336], [304, 280], [330, 226], [376, 184], [432, 160], [492, 152], [540, 164]]),
-    vessel("front", 4.4, [[386, 436], [410, 414], [446, 392], [488, 370], [526, 344], [552, 312]]),
+    vessel("front", 7.0, [[414, 905], [413, 820], [414, 760], [418, 700], [424, 640], [432, 590], [438, 548], [434, 516], [418, 496], [404, 480], [410, 462], [400, 448], [386, 436]], 0.7, "carotid"),
+    vessel("front", 3.8, [[386, 436], [356, 416], [322, 384], [300, 336], [304, 280], [330, 226], [376, 184], [432, 160], [492, 152], [540, 164]], 0.45, "inner"),
+    vessel("front", 4.4, [[386, 436], [410, 414], [446, 392], [488, 370], [526, 344], [552, 312]], 0.45, "outer"),
     vessel("front", 2.6, [[410, 414], [396, 372], [378, 326], [352, 286]]),
     vessel("front", 2.6, [[446, 392], [438, 340], [440, 286], [424, 232]]),
     vessel("front", 2.6, [[488, 370], [494, 316], [486, 258], [498, 204]]),
     vessel("front", 2.6, [[526, 344], [548, 290], [560, 240]]),
     vessel("front", 2.4, [[430, 402], [450, 432], [492, 440], [530, 428]]),
     vessel("front", 2.2, [[400, 424], [404, 452], [436, 468]]),
-    vessel("front", 2.2, [[304, 280], [338, 290], [366, 276]]),
-    vessel("front", 2.2, [[376, 184], [392, 222], [420, 240]]),
-    vessel("back", 5.0, [[492, 905], [484, 822], [479, 780], [476, 740], [477, 700], [480, 655], [484, 624], [500, 604], [526, 598], [533, 580], [516, 566], [498, 554], [484, 532], [468, 508], [458, 482], [462, 456], [470, 440]], 0.7),
-    vessel("back", 3.4, [[470, 440], [504, 432], [548, 420], [592, 396], [624, 356], [636, 306]]),
+    vessel("front", 2.2, [[304, 280], [338, 290], [366, 276]], 0.45, "innerBranch"),
+    vessel("front", 2.2, [[376, 184], [392, 222], [420, 240]], 0.45, "innerBranch"),
+    vessel("back", 5.0, [[492, 905], [484, 822], [479, 780], [476, 740], [477, 700], [480, 655], [484, 624], [500, 604], [526, 598], [533, 580], [516, 566], [498, 554], [484, 532], [468, 508], [458, 482], [462, 456], [470, 440]], 0.7, "vertebral"),
+    vessel("back", 3.4, [[470, 440], [504, 432], [548, 420], [592, 396], [624, 356], [636, 306]], 0.45, "rear"),
     vessel("back", 2.4, [[592, 396], [616, 404], [636, 388]]),
     vessel("back", 2.4, [[548, 420], [574, 372], [600, 330]]),
     vessel("back", 2.4, [[624, 356], [606, 300], [612, 250]]),
-    vessel("back", 2.6, [[462, 470], [498, 478], [540, 470], [584, 468], [614, 482]]),
-    vessel("back", 2.4, [[462, 496], [510, 508], [556, 504], [600, 502]]),
-    vessel("back", 2.4, [[492, 546], [520, 536], [556, 528], [590, 522]]),
+    vessel("back", 2.6, [[462, 470], [498, 478], [540, 470], [584, 468], [614, 482]], 0.45, "lower"),
+    vessel("back", 2.4, [[462, 496], [510, 508], [556, 504], [600, 502]], 0.45, "lower"),
+    vessel("back", 2.4, [[492, 546], [520, 536], [556, 528], [590, 522]], 0.45, "lower"),
   ];
   const SPACING = 24;
   // Tubes and centre lines grouped by zone, so each zone is painted in one go.
@@ -537,7 +668,7 @@ const CONFIG = /*__CONFIG__*/;
 
   function buildTwigs() {
     const rand = rng(97);
-    const twigs = { front: [new Path2D(), new Path2D(), new Path2D()], back: [new Path2D(), new Path2D(), new Path2D()] };
+    const twigs = { front: [new Path2D(), new Path2D(), new Path2D()], back: [new Path2D(), new Path2D(), new Path2D()], lines: { front: [], back: [] } };
     const allowed = {
       front: (x, y) => x < 600 && inside(CEREBRUM, x, y),
       back: (x, y) => (x > 545 && inside(CEREBRUM, x, y)) || inside(CEREBELLUM, x, y) || inside(BRAINSTEM, x, y),
@@ -558,6 +689,7 @@ const CONFIG = /*__CONFIG__*/;
       }
       if (poly.length < 4) return;
       toPath(spline(poly.filter((_, i) => i % 2 === 0 || i === poly.length - 1), false, 3), false, twigs[zone][depth]);
+      twigs.lines[zone].push(poly);
       mark(poly);
       if (depth < 2) {
         // Fork near the end, and sometimes once along the way.
@@ -594,6 +726,9 @@ const CONFIG = /*__CONFIG__*/;
   // Where the carotid is drawn narrowed.
   const PINCH = { x: 414, y: 760 };
   const PINCH_S = (() => { const v = VESSELS[0]; let best = 0; v.poly.forEach((p, i) => { if (Math.abs(p[1] - PINCH.y) < Math.abs(v.poly[best][1] - PINCH.y)) best = i; }); return v.d[best]; })();
+
+  // Teeth, front to back: width, crown height, root length, lean, number of roots.
+  const TEETH = [[8, 20, 20, -0.36, 1], [8, 19, 19, -0.28, 1], [9, 20, 25, -0.16, 1], [9.5, 15, 19, -0.05, 1], [9.5, 14, 18, 0, 1], [15, 13, 16, 0, 2], [15, 13, 16, 0.03, 2], [13, 12, 13, 0.06, 2]];
 
   // ---- static layers (painted once per size) ---------------------------------
   const BONE = [206, 228, 246];
@@ -745,9 +880,8 @@ const CONFIG = /*__CONFIG__*/;
     c.beginPath(); c.ellipse(399, 487, 15, 9, 0.2, 0, 6.283); c.stroke();
     c.beginPath(); c.ellipse(452, 512, 5.5, 4.5, 0, 0, 6.283); c.stroke();
     // Teeth, front (left) to back.
-    const teeth = [[8, 20, 20, -0.36, 1], [8, 19, 19, -0.28, 1], [9, 20, 25, -0.16, 1], [9.5, 15, 19, -0.05, 1], [9.5, 14, 18, 0, 1], [15, 13, 16, 0, 2], [15, 13, 16, 0.03, 2], [13, 12, 13, 0.06, 2]];
     let tx = 230;
-    for (const [w, crown, root, lean, roots] of teeth) {
+    for (const [w, crown, root, lean, roots] of TEETH) {
       tooth(c, tx + w / 2, 567.5 - Math.abs(lean) * 5, w, crown, root, lean, -1, roots);
       tooth(c, tx + w / 2 + 4, 568.5 - Math.abs(lean) * 12, w - 0.5, crown - 1.5, root + 2, -lean * 0.7, 1, roots);
       tx += w + 1.4;
@@ -764,6 +898,17 @@ const CONFIG = /*__CONFIG__*/;
   function soft(c, path, steps) {
     // Several strokes of shrinking width: a soft-edged dark groove.
     for (const [width, alpha] of steps) { c.strokeStyle = `rgba(0,0,0,${alpha})`; c.lineWidth = width; c.stroke(path); }
+  }
+  // The folds alone, as a grey height map for the 3D view: white crowns, dark grooves.
+  function foldMap() {
+    const el = document.createElement("canvas"); el.width = el.height = 1024;
+    const c = el.getContext("2d"), k = el.width / FOLD_BOX.size;
+    c.fillStyle = "#fff"; c.fillRect(0, 0, el.width, el.height);
+    c.setTransform(k, 0, 0, k, -FOLD_BOX.x * k, -FOLD_BOX.y * k);
+    c.lineCap = "round"; c.lineJoin = "round";
+    soft(c, CORTEX.majorPath, [[13, 0.10], [9, 0.14], [5.5, 0.25], [2.6, 0.6]]);
+    for (const path of [CORTEX.minorPath, CORTEX.beyondPath]) soft(c, path, [[10, 0.09], [6.5, 0.14], [3.8, 0.24], [1.6, 0.6]]);
+    return { canvas: el, ...FOLD_BOX };
   }
   function paintShade(c, S) {
     // Grey shading, multiplied over the tissue colour: white leaves it alone.
@@ -1033,6 +1178,58 @@ const CONFIG = /*__CONFIG__*/;
     ctx.fillText("Schematic, not to scale", 30, 872);
   }
 
+  // ---- 3D view -------------------------------------------------------------
+  // Built from the same outlines as the film view. If three.js or WebGL is
+  // missing, the page falls back to the film view alone.
+  let view3d = null, mode = "film";
+  const top = (poly) => Math.min(...poly.map((p) => p[1]));
+  try {
+    if (window.THREE && typeof buildHead3D === "function") {
+      let tx = 230;
+      view3d = buildHead3D(window.THREE, $("stage3d"), {
+        size: [VW, VH], pivot: [440, 500],
+        head: HEAD.poly, vault: VAULT.poly, face: FACE.poly, mandible: MANDIBLE.poly,
+        cerebrum: CEREBRUM_BASE, cerebellum: CEREBELLUM.poly,
+        stem: curve([[474, 446], [467, 480], [473, 512], [486, 542], [503, 580], [507, 602]], false),
+        cord: CORD, airway: AIRWAY, spine: SPINE,
+        teeth: TEETH.map(([w, crown]) => { const t = { x: tx + w / 2, w, crown }; tx += w + 1.4; return t; }),
+        top: { head: top(HEAD.poly), skull: top(VAULT.poly), brain: top(CEREBRUM_BASE) },
+        zoneBlend: [520, 615], folds: foldMap(), vessels: VESSELS, twigs: TWIGS.lines, spacing: SPACING,
+        inCerebrum: (x, y) => inside(CEREBRUM, x, y), inCerebellum: (x, y) => inside(CEREBELLUM, x, y),
+        pinch: PINCH, pinchAlong: PINCH_S, tagAt: warp([430, 300]),
+        labels: [
+          { name: "front of the brain", short: "front", note: "carotid supply", at: warp([312, 226]), out: 96, spot: [0.035, 0.2] },
+          { name: "back of the brain", short: "back", note: "vertebral supply", at: [612, 478], out: 70, spot: [0.965, 0.72] },
+          { name: "carotid artery", short: "carotid", at: [413, 838], out: 77, spot: [0.035, 0.95] },
+          { name: "vertebral artery", short: "vertebral", at: [486, 846], out: 31, spot: [0.965, 0.95] },
+          { name: "carotid arteries compressed", short: "compressed", at: [PINCH.x, PINCH.y], out: 76, spot: [0.035, 0.85], when: "held" },
+        ],
+      });
+    }
+  } catch (err) {
+    console.warn("3D view unavailable, showing the film view instead.", err);
+    $("stage3d").textContent = ""; view3d = null;
+  }
+  function setMode(next) {
+    mode = view3d ? next : "film";
+    $("stage3d").hidden = mode !== "3d"; canvas.hidden = mode !== "film";
+    $("views").hidden = !view3d; $("hint").hidden = mode !== "3d";
+    $("view-3d").setAttribute("aria-pressed", String(mode === "3d")); $("view-film").setAttribute("aria-pressed", String(mode === "film"));
+    fit();
+  }
+  $("view-3d").addEventListener("click", () => setMode("3d"));
+  $("view-film").addEventListener("click", () => setMode("film"));
+
+  function draw3d(seconds) {
+    const q = flows();
+    const progress = phase === "held" ? Math.min(1, X.rampS > 0 ? (steps * DT) / X.rampS : 1) : 0;
+    view3d.render({
+      frontColour: tissue(front), backColour: tissue(back), flow: q, eye, still: reduceMotion,
+      squeeze: progress * (1 - scenario.frontFlow), held: progress > 0, frontOff: front < X.threshold,
+    }, seconds);
+  }
+  const paint = () => (mode === "3d" ? draw3d(performance.now() / 1000) : draw());
+
   // ---- frame loop -----------------------------------------------------------
   let last = performance.now(), sideTick = 0;
   function frame(now) {
@@ -1042,12 +1239,13 @@ const CONFIG = /*__CONFIG__*/;
     const q = flows();
     if (!reduceMotion || phase !== "idle") for (const v of VESSELS) v.phase += 95 * q[v.zone] * dt;
     eye += (eyeTarget() - eye) * Math.min(1, dt * 7);
-    draw();
+    paint();
     if (phase !== "idle" && now - sideTick > 80) { sideTick = now; renderSide(); }
     requestAnimationFrame(frame);
   }
 
   function fit() {
+    if (mode === "3d") { view3d.resize(); return; }
     const scale = Math.min(window.devicePixelRatio || 1, 2);
     const w = canvas.clientWidth || VW;
     NARROW = w < 520;
@@ -1056,10 +1254,14 @@ const CONFIG = /*__CONFIG__*/;
     buildLayers();
   }
   window.addEventListener("resize", fit);
-  fit();
+  setMode("3d");
   resetRun();
-  // For checks: jump the model forward without waiting.
-  window.__xray = { advance: (s) => { advance(s); eye = eyeTarget(); renderSide(); draw(); }, state: () => ({ phase, front, back, crossedAt, recoveredAt, releasedAt, eye }) };
+  // For checks: jump the model forward without waiting, switch view, turn the head.
+  window.__xray = {
+    advance: (s) => { advance(s); eye = eyeTarget(); renderSide(); paint(); },
+    state: () => ({ phase, front, back, crossedAt, recoveredAt, releasedAt, eye, mode }),
+    setMode, turn: (yaw, pitch) => { if (view3d) { view3d.setView(yaw, pitch); paint(); } },
+  };
   requestAnimationFrame(frame);
 })();
 </script>

@@ -37,3 +37,18 @@ def test_slower_onset_never_gives_earlier_loc() -> None:
     for name in fast:
         if not np.isnan(fast[name]):
             assert slow[name] >= fast[name]
+
+
+def test_page_shows_the_same_ufc_numbers_as_the_check() -> None:
+    """The viewer's UFC strip is built from params and ufc_predictions, nothing else."""
+    from scripts.build_simulator import build_config
+
+    p = Params()
+    ufc = build_config()["xray"]["ufc"]
+    model = ufc_predictions(p, central_threshold(p))
+    a, b = list(model.values())[:2]
+    assert ufc["model"] == {"A": round(a, 1), "B": round(b, 1)}
+    assert ufc["measured"][0]["t"] == [UFC_LOC_MEAN_S, *UFC_LOC_CI95_S]
+    assert {row["name"]: row["t"] for row in ufc["byType"]} == UFC_BY_TYPE_SECONDARY_S
+    times = [row["t"] for row in ufc["byType"]]
+    assert times == sorted(times)

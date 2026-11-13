@@ -17,9 +17,12 @@ from choke_model.model import Choke
 from choke_model.params import (
     FIXATION_BEFORE_LOC_S, MITCHELL_FIXATION_MEAN_S, MITCHELL_FIXATION_RANGE_S,
     MITCHELL_FIXATION_SD_S, MITCHELL_NO_LOC_HOLD_S, MITCHELL_TIME_TO_MIN_VELOCITY_S,
-    MITCHELL_VELOCITY_LEFT_LOC, MITCHELL_VELOCITY_LEFT_NO_LOC, ROSSEN_LOC_S, ROSSEN_RECOVERY_S, SECONDS_PER_MINUTE, Params,
+    MITCHELL_VELOCITY_LEFT_LOC, MITCHELL_VELOCITY_LEFT_NO_LOC, ROSSEN_LOC_S, ROSSEN_RECOVERY_S, SECONDS_PER_MINUTE,
+    UFC_ARM_IN_S, UFC_BY_TYPE_SECONDARY_S, UFC_CHOKE_FINISHES, UFC_CHOKE_LOC_SHARE, UFC_CHOKE_SHARE_OF_OUTCOMES,
+    UFC_LOC_CI95_S, UFC_LOC_MEAN_S, UFC_LOC_N, UFC_NECK_ONLY_S, UFC_RNC_SHARE, Params,
 )
 from choke_model.uncertainty import INPUTS
+from scripts.ufc_check import ufc_predictions
 
 ROOT = Path(__file__).resolve().parents[1]
 SIM = ROOT / "simulator"
@@ -39,6 +42,28 @@ def slider(name: str, central: float, digits: int) -> dict[str, float]:
 XRAY_MAX_HOLD_S = 25.0
 
 
+def ufc_config(p: Params) -> dict:
+    """UFC choke times (S12, S13) and the model's prediction for them (A14)."""
+    a, b, c = ufc_predictions(p, central_threshold(p)).values()
+    assert c != c, "reading C is expected to predict no loss of consciousness"
+    return {
+        "finishes": UFC_CHOKE_FINISHES,
+        "shareOfOutcomes": UFC_CHOKE_SHARE_OF_OUTCOMES,
+        "locShare": UFC_CHOKE_LOC_SHARE,
+        "rncShare": UFC_RNC_SHARE,
+        "n": UFC_LOC_N,
+        # [mean, low, high] of the 95 % confidence interval, seconds.
+        "measured": [
+            {"name": f"All {UFC_LOC_N} chokes", "t": [UFC_LOC_MEAN_S, *UFC_LOC_CI95_S]},
+            {"name": "Neck only", "t": list(UFC_NECK_ONLY_S)},
+            {"name": "Arm trapped inside", "t": list(UFC_ARM_IN_S)},
+        ],
+        # Per-type means reached us second-hand and have no intervals.
+        "byType": [{"name": name, "t": t} for name, t in sorted(UFC_BY_TYPE_SECONDARY_S.items(), key=lambda kv: kv[1])],
+        "model": {"A": round(a, 1), "B": round(b, 1)},
+    }
+
+
 def xray_config(p: Params) -> dict:
     """Numbers for the x-ray view: two zones, each run through the same equation (A13)."""
     lost, awake = MITCHELL_VELOCITY_LEFT_LOC, MITCHELL_VELOCITY_LEFT_NO_LOC
@@ -52,6 +77,7 @@ def xray_config(p: Params) -> dict:
         "fixationSd": MITCHELL_FIXATION_SD_S,
         "fixationBeforeLoc": FIXATION_BEFORE_LOC_S,
         "rossenRecovery": ROSSEN_RECOVERY_S,
+        "ufc": ufc_config(p),
         "scenarios": [
             {"id": "lost", "name": "Full compression: the 16 officers who lost consciousness",
              "frontFlow": round(sum(MITCHELL_VELOCITY_LEFT_LOC) / 2, 3), "backFlow": 1.0,
@@ -132,6 +158,7 @@ def build_fragment(template: str = "template.html") -> str:
     """The page body with the model and the config inlined."""
     page = (SIM / template).read_text()
     page = page.replace("/*__MODEL__*/", (SIM / "model.js").read_text())
+    page = page.replace("/*__HEAD3D__*/", (SIM / "head3d.js").read_text())
     return page.replace("/*__CONFIG__*/", json.dumps(build_config(), indent=2))
 
 

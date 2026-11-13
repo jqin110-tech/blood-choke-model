@@ -125,6 +125,15 @@ a "back" zone fed by the vertebrals, with no oxygen passing between them.
   unconscious state, not a separate result. The sign S3 timed is the eyes
   becoming fixed (a stare), which the drawing does not show; no opened source
   gives a time for the eyes closing.
+- The 3D view is the same drawing given depth. Each side outline is swept
+  into a solid, and the widths, the depth of each artery and the way the
+  folds wrap around the brain are made up to look plausible, not taken from
+  an opened source. Turning the head changes nothing in the model. The 3D
+  view needs the three.js library, loaded from a public CDN; without it the
+  page falls back to the flat side view.
+- The strip of UFC choke times under the picture shows measured values (S12,
+  with the per-type values second-hand) beside the model's times from
+  `scripts/ufc_check.py`. Every choke type gets the same prediction (A14).
 
 **A14. A choke in a fight cuts brain blood flow the way the laboratory neck
 restraint did.** The UFC study (S12) timed loss of consciousness from video;

@@ -12,7 +12,11 @@ UFC check (model vs chokes timed in UFC fights): `python -m scripts.ufc_check`.
 Interactive pages, both built by `python -m scripts.build_simulator` from the
 same parameters, with a test that checks their JavaScript copy of the equation
 against the Python model:
-- `simulator/xray.html`: a schematic x-ray of the head and neck showing blood
-  flow to the brain being cut and the front of the brain going dark (A13).
+- `simulator/xray.html`: a schematic x-ray head you can rotate, showing blood
+  flow to the brain being cut and the front of the brain going dark (A13),
+  with choke times measured in UFC fights beside the model's prediction
+  (A14). The 3D view loads three.js from a CDN, so it needs an internet
+  connection; offline it falls back to a flat side view. The Python model
+  and the tests do not depend on it.
 - `simulator/index.html`: sliders and an oxygen trace.
 Tests: `pytest` (also run by GitHub Actions).
