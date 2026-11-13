@@ -45,3 +45,22 @@ runs down, and once it drops far enough, the brain stops supporting
 consciousness. What the sources do **not** give us directly is how low "far
 enough" is, expressed as an oxygen level. That is the biggest open gap (see
 SOURCES.md, Gaps).
+
+## Chokes in UFC fights
+
+Chokes end about one UFC fight in six: 904 fight-ending chokes, 15.5 % of all
+outcomes, and the rear naked choke alone is 49.1 % of them (S13). Most end
+with a tap, and 11 % end with the fighter unconscious (S13). When a panel of
+17 experts timed 81 of those from video, the mean time from the choke being
+established to loss of consciousness was 9.0 s, with a 95 % confidence
+interval of 8.3 to 9.9 s (S12). Chokes around the neck alone (8.9 s) and
+chokes with an arm trapped inside (9.0 s) took the same time (S12).
+
+Reviews describe one shared mechanism: a choke "leads to submission via
+decreasing cerebral blood flow" (S14), with compression of the carotid
+arteries the best-established part (S15, secondary). The jugular veins sit in
+the same region and are compressed too (S14), and a blood-pressure reflex may
+add to the effect (S15, secondary). No opened source measures how individual
+techniques differ in what they compress, so this project treats every blood
+choke as the same event: carotid flow cut, vertebral flow left alone.
+

@@ -52,6 +52,25 @@ ROSSEN_LOC_MEAN_SECONDARY_S = (6.41, 6.91)       # S10: secondary mean, reanalys
 ROSSEN_RECOVERY_MEAN_SECONDARY_S = 6.14          # S11: secondary mean, n = 28
 FIXATION_BEFORE_LOC_S = (0.5, 1.0)    # S1/S2: eyes fixed 1/2 to 1 s before LOC
 
+# Chokes in UFC fights, timed from video (S12, abstract). Held out from the fit.
+UFC_LOC_MEAN_S = 9.0                  # "mean time from the establishment of a choke to LOC of 9.0 s"
+UFC_LOC_CI95_S = (8.3, 9.9)           # "[95% CI = 8.3, 9.9]", n = 81 chokes
+UFC_LOC_N = 81
+UFC_NECK_ONLY_S = (8.9, 8.0, 10.2)    # mean, 95 % CI low, high: "neck-only M = 8.9 s [95% CI = 8.0-10.2]"
+UFC_ARM_IN_S = (9.0, 8.1, 10.3)       # "arm-in M = 9.0 s [8.1-10.3]"
+# Per-technique means from web write-ups of S12, NOT from an opened journal
+# page. No confidence intervals. Shown for context, never used as a test.
+UFC_BY_TYPE_SECONDARY_S = {
+    "Bulldog choke": 6.2, "Arm triangle": 7.2, "D'Arce choke": 8.6, "Headlock": 8.8, "Guillotine": 8.9,
+    "Rear naked choke": 8.9, "North-south choke": 9.4, "Anaconda choke": 9.5, "Triangle choke": 9.5,
+    "Arm-in guillotine": 10.2, "Von Flue choke": 10.5,
+}
+# Fight-ending chokes in UFC history (S13, abstract). Context only.
+UFC_CHOKE_FINISHES = 904              # "there were 904 such chokes"
+UFC_CHOKE_SHARE_OF_OUTCOMES = 0.155   # "comprising 15.5% of fight outcomes"
+UFC_CHOKE_LOC_SHARE = 0.11            # "11% resulted in loss of consciousness"
+UFC_RNC_SHARE = 0.491                 # rear naked choke: "49.1% of the total choke finishes"
+
 
 @dataclass(frozen=True)
 class Params:

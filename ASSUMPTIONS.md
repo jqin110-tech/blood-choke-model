@@ -126,3 +126,24 @@ a "back" zone fed by the vertebrals, with no oxygen passing between them.
   becoming fixed (a stare), which the drawing does not show; no opened source
   gives a time for the eyes closing.
 
+**A14. A choke in a fight cuts brain blood flow the way the laboratory neck
+restraint did.** The UFC study (S12) timed loss of consciousness from video;
+nobody measured blood flow in the cage. For the UFC comparison the model
+borrows the flow left, and the 1.6 s it takes to get there, from the
+laboratory study of police officers (S3), read the same three ways as in A11.
+- The clock starts when S12's panel judged the choke "established". The
+  model's clock starts when flow begins to fall. These are assumed to be the
+  same moment.
+- The fighters were mid-fight: breathing hard, with a raised heart rate, and
+  resisting. The model uses resting physiology (S5) and lets nothing respond
+  (A10). No opened source gives brain blood flow or oxygen use during a fight.
+- **Every kind of choke gets the same inputs.** No opened source measures
+  which vessels each technique compresses, or how much (SOURCES.md, Gap 7).
+  S12 itself found nearly the same time for chokes with and without an arm
+  inside (8.9 s and 9.0 s), which is what one shared mechanism would give,
+  but that agreement is not evidence the model's inputs are right.
+- Compression of the jugular veins and a blood-pressure reflex from the neck
+  may also contribute (S15, secondary). The model has neither (A4, A10).
+- Chokes that close the windpipe instead of the arteries are outside the
+  model: it has no lungs and holds blood oxygen constant (Gap 8).
+

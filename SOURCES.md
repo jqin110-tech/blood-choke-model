@@ -244,7 +244,110 @@ set for the Fick derivation (A8). The disagreement is a stated limitation.
 | Minimum recovery | "there is a minimum time (mean 8.29 ± 3.84 s) required for recovery of consciousness when complete loss of consciousness occurs." | context for stage 5 |
 | Rossen recovery, **secondary** | "For their 28 LOC episodes defining their ABSINCAP equivalent, the mean was 6.14 s" | secondary mean 6.14 s, n = 28 |
 
+## S12. Stellpflug et al. (2020) — opened (journal abstract only). UFC video study
+
+- Stellpflug SJ, Menton WH, Dummer MF, Menton T, Corry J, LeFevere R. *Time
+  to unconsciousness from sportive chokes in fully resisting highly trained
+  combatants.* Int J Perform Anal Sport. 2020;20(4):720–728.
+  doi:10.1080/24748668.2020.1780873.
+- Link opened (abstract): https://econpapers.repec.org/RePEc:taf:rpanxx:v:20:y:2020:i:4:p:720-728
+- Full text is behind the publisher's paywall and was **not** opened
+  (tandfonline.com failed to load).
+
+| Quantity | Exact text | Value used |
+|---|---|---|
+| Method | "An internally validated panel of 17 sportive choking experts evaluated 89 choke sequences" | video review by 17 experts |
+| Sample | "81 were included as chokes to LOC." | n = 81 |
+| Time to LOC | "had a mean time from the establishment of a choke to LOC of 9.0 s [95% CI = 8.3, 9.9]." | **9.0 s, 95 % CI 8.3 – 9.9** |
+| By category | "neck-only M = 8.9 s [95% CI = 8.0–10.2]; arm-in M = 9.0 s [8.1–10.3]." | neck-only 8.9 s (8.0 – 10.2); arm-in 9.0 s (8.1 – 10.3) |
+
+The abstract gives no SD, range or per-technique times. Times are read from
+fight video by a panel, so "establishment of a choke" and "LOC" are judged,
+not instrumented.
+
+**Per-technique means, secondary.** Two web write-ups of this paper list a
+mean for each of 11 choke types. One is by a lawyer who says he was one of the
+17 panel experts. They are **not** from an opened journal page, carry no
+confidence intervals, and the write-up reports "no significant difference"
+between types. They are shown for context only and are never used as a test.
+
+- Links opened: https://combatsportslaw.com/2020/06/17/study-locked-in-chokes-take-9-seconds-to-full-unconsciousness/
+  and https://sensobjj.com/blogs/graciemag-1/scientific-study-reveals-which-chokes-put-people-to-sleep-the-fastest
+  (both give the same list).
+
+| Choke type (as named in the write-ups) | Mean time to LOC, **secondary** |
+|---|---|
+| Bulldog choke | 6.2 s |
+| Arm triangle | 7.2 s |
+| D'Arce choke | 8.6 s |
+| Headlock | 8.8 s |
+| Guillotine | 8.9 s |
+| Rear naked choke | 8.9 s |
+| North-south choke | 9.4 s |
+| Anaconda choke | 9.5 s |
+| Triangle choke | 9.5 s |
+| Arm-in guillotine | 10.2 s |
+| Von Flue choke | 10.5 s |
+
+Also from the second write-up: "Chokes requiring the gi weren't included for
+this particular study."
+
+## S13. Stellpflug, Menton & LeFevere (2022) — opened (abstract only). UFC choke counts
+
+- Stellpflug SJ, Menton WH, LeFevere RC. *Analysis of the fight-ending chokes
+  in the history of the Ultimate Fighting Championship mixed martial arts
+  promotion.* Phys Sportsmed. 2022;50(1):60–63.
+  doi:10.1080/00913847.2020.1866958.
+- Links opened (abstract): https://informahealthcare.com/doi/full/10.1080/00913847.2020.1866958
+  and https://www.healthpartners.com/knowledgeexchange/display/document-rn27368
+
+| Quantity | Exact text | Value used |
+|---|---|---|
+| Method | "An analysis was done on every fight-ending choke in the history of the UFC™ mixed martial arts promotion." | context |
+| Count | "During the study period there were 904 such chokes, comprising 15.5% of fight outcomes and 76.2% of grappling submissions." | 904 chokes; 15.5 % of fight outcomes |
+| LOC | "Most of the fight-ending chokes culminated in voluntary submission; however, 11% resulted in loss of consciousness." | 11 % ended in LOC |
+| Most common | "The rear naked choke (RNC) was significantly more frequent than other chokes, comprising 49.1% of the total choke finishes" | rear naked choke 49.1 % |
+
+Context only: none of these numbers enters the model.
+
+## S14. Hasegawa et al. (2026) — opened (full text). Review of grappling submissions
+
+- Hasegawa ME, Rimm JB, Ishikawa KM, Obana KK, Sy JW, Horng JC, Chan SK,
+  Wake JL, Cage M, Scoggin JF, Crawford SN. *Common grappling submissions: A
+  descriptive, illustrative and literature review of anatomic structures at
+  risk and pathophysiology.* Hawaii J Health Soc Welf. 2026;85(6):132–141.
+  doi:10.62547/RNVF9981.
+- Link opened: https://hawaiijournalhealth.org/past_issues/hjhsw8506_0132.pdf
+
+| Quantity | Exact text | Value used |
+|---|---|---|
+| Mechanism | "Strangulation leads to submission via decreasing cerebral blood flow and/or inflicting pain to the neck region." | chokes work by cutting brain blood flow |
+| Definition | "The term \"chokes\" refers to maneuver that mechanistically achieve submission via strangulation of the neck." | context |
+| Structures | "Other structures at risk include carotid arteries, jugular veins, and various nerves." | carotids and jugular veins are both in the compressed region |
+
+A literature review with no measurements of its own: no flow, pressure or
+timing values. It gives no per-technique difference in which vessels are
+compressed.
+
+## S15. Review of vascular neck restraint mechanisms — **secondary** (abstract as quoted by a blog)
+
+- Title as shown: *There is more to the mechanism of unconsciousness from
+  vascular neck restraint than simply carotid compression.* International
+  Journal of Neuroscience. Authors, year, volume and DOI were not on the page
+  opened and are not filled in here.
+- Link opened: https://combatsportslaw.com/2019/09/11/study-the-science-behind-the-rear-naked-choke/
+
+| Quantity | Exact text (abstract as quoted on the blog) | Value used |
+|---|---|---|
+| Best-established part | "The best literature-established physiologic component of VNR is carotid compression" | supports A4 as the main mechanism |
+| Other parts | "that carotid compression, jugular compression, and carotid barosensor stimulation are all at play." | jugular compression and a blood-pressure reflex may add to it; the model has neither (limitation) |
+
 ## Bibliographic records only (no values taken)
+
+- Reay DT, Holloway GA Jr. *Changes in carotid blood flow produced by neck
+  compression.* Am J Forensic Med Pathol. 1982;3(3):199–202.
+  doi:10.1097/00000433-198209000-00002. PMID 7148771. (Record opened at
+  Europe PMC; it has no abstract and the article needs a subscription.)
 
 - Kety SS, Schmidt CF. *The nitrous oxide method for the quantitative
   determination of cerebral blood flow in man: theory, procedure and normal
@@ -277,6 +380,8 @@ set for the Fick derivation (A8). The disagreement is a stated limitation.
 | Velocity threshold for LOC (**secondary**) | < 0.5 of baseline, both sides | Njemanze 1992 via S3 |
 | Rossen means (**secondary**) | LOC 6.41 – 6.91 s; recovery 6.14 s | S10, S11 |
 | Observed recovery | 3 – 11.5 s | S1/S2 |
+| Observed time to LOC, chokes in UFC fights | mean 9.0 s, 95 % CI 8.3 – 9.9 (n = 81); neck-only 8.9 (8.0 – 10.2); arm-in 9.0 (8.1 – 10.3) | S12 |
+| Per-technique means in UFC fights (**secondary**) | 6.2 – 10.5 s across 11 types, no significant difference reported | S12 write-ups |
 
 ## Gaps (not filled; awaiting a source)
 
@@ -290,3 +395,15 @@ set for the Fick derivation (A8). The disagreement is a stated limitation.
 4. **Independent arterial O2 content** to check the derived 0.169 ml/ml.
 5. **Rossen (1943) original**: only the reprint (S1) and the review (S2) were
    opened.
+6. **Per-technique times from the paper itself.** S12's abstract gives only
+   two categories. The table of 11 choke types is known only from web
+   write-ups. The full text (doi:10.1080/24748668.2020.1780873) would settle
+   it and would also give the spread, not just the mean.
+7. **How much each kind of choke compresses each vessel.** No opened source
+   measures carotid, jugular or vertebral flow for individual grappling
+   chokes. Reay & Holloway (1982) may hold flow measurements for two police
+   neck holds but could not be opened. Until a source is found, the model
+   cannot give different inputs to different submissions.
+8. **Air chokes.** No opened source gives timing or physiology for a choke
+   that closes the windpipe instead of the arteries. The model has no lungs
+   or blood-oxygen store, so it could not represent one anyway.
