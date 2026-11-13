@@ -1,0 +1,52 @@
+Stage 5: recovery after release (nominal parameters unless stated)
+
+[Rossen 1943, NOT FITTED] observed: "response to restoration of blood flow" in 3 to 11.5 s (S1/S2);
+  secondary mean 6.14 s, n = 28 (S11). The texts opened do not say how long the cuff
+  stayed on after consciousness was lost, so that hold is swept. Release is a step (S2: deflation "instantaneous").
+
+[model recovery time, seconds from release until O2 is back above the threshold]
+  hold after LOC   0.5 s |     1 s |     2 s |     5 s |    10 s |    30 s |   100 s | slowest possible
+  central (LOC 7 s, half vertebral flow left)
+                    0.20 |    0.36 |    0.60 |    0.88 |    0.90 |    0.91 |    0.91 | 1.03 s
+  LOC 4 s, vertebral flow left 0
+                    0.48 |    0.88 |    1.50 |    2.14 |    2.16 |    2.16 |    2.16 | 2.16 s
+  LOC 4 s, vertebral flow left 1
+                    0.46 |    0.85 |    1.50 |    2.72 |    3.49 |    3.67 |    3.67 | 4.10 s
+  LOC 10 s, vertebral flow left 0
+                    0.00 |    0.00 |    0.00 |    0.00 |    0.00 |    0.00 |    0.00 | 0.00 s
+  LOC 10 s, vertebral flow left 1
+                    0.10 |    0.19 |    0.34 |    0.58 |    0.69 |    0.70 |    0.70 | 1.13 s
+  central fit: 0.2 to 1.0 s, against 3 to 11.5 s observed -> too fast by 2.0 to 11.3 s
+  corners of the fit: the slowest any corner can be is 4.1 s, which reaches the fast end of
+  the observed range only if LOC took 4 s, the cuff left the vertebral arteries fully open and the hold was long
+
+[can any sourced parameter values fix it?] Monte Carlo, 5000 draws, seed 2026, inputs as in stage 4
+  recovery after a 5 s hold past LOC:          median 0.90 s, 5-95 % 0.00 to 3.26 s
+  slowest possible recovery (refill from empty): median 1.17 s, 5-95 % 0.01 to 4.88 s, largest in any draw 11.2 s
+  share of draws in which even the slowest possible recovery reaches
+      the fastest observed   ( 3.00 s):  17.2%
+      the secondary mean     ( 6.14 s):   1.9%
+      the slowest observed   (11.50 s):   0.0%
+  after a 5 s hold, share of draws inside the observed 3-11.5 s: 7.1%
+  what drives the slowest possible recovery (rank correlation): fitted threshold +0.98, blood transit time CBV/CBF +0.53
+
+[what the observed times would need, central fit]
+  (a) a delay between oxygen returning and consciousness returning of about 2.0 to 11.3 s, which the model does not have;
+  (b) or a higher oxygen level for waking than for passing out. O2 level (C/C0) the model has reached
+      after release, starting from completely empty (the slowest case):
+         3.00 s (fastest observed): 0.51   (threshold for passing out: 0.24)
+         6.14 s (secondary mean): 0.75   (threshold for passing out: 0.24)
+        11.50 s (slowest observed): 0.92   (threshold for passing out: 0.24)
+  Neither is added to the model: each needs a new number, and there is no second timed data set to test it on.
+  context (S2): the corneal reflex returned 5 to 10 s after release, "depending on the duration" of the arrest.
+
+[Mitchell 2012] observed: "recovery occurred almost immediately upon release" (no time in seconds)
+  protocol: released 1-2 s after fixation; model LOC is 0.5-1 s after fixation,
+  so release comes 0 to 1.5 s after the model's LOC
+  A  whole brain falls like the MCA velocity            model recovery 0.00 to 0.41 s after release
+  B  carotids shut, vertebrals normal                   model recovery 0.00 to 0.24 s after release
+  This cannot be scored: "almost immediately" has no number. It does not contradict the model.
+
+[verdict] The model FAILS the recovery test. With the central fit, oxygen is back above the threshold
+  within 1.0 s of release however long the hold; people took 3 to 11.5 s. Across the
+  input ranges the model reaches the fastest observed time in 17% of draws at most, and the slowest in 0%.

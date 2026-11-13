@@ -54,6 +54,22 @@ Notes: internal inconsistencies in the reprint (54 vs 53 St. Cloud subjects;
 | Recovery | "The response to restoration of blood flow was also rapid, ranging from 3 to 11.5 seconds." | **3–11.5 s** (same data as S1) |
 | Eye fixation | "At one-half to 1 second before losing consciousness, the subject's eyes would become fixed in mid-position." | |
 
+Reopened on 13 Nov 2026 for stage 5 (the NIH author manuscript at the same
+link), looking for how recovery was measured:
+
+| Quantity | Exact text | Value used |
+|---|---|---|
+| Release | "The deflation of the cuff was also instantaneous, with release of pressure occurring in a fraction of a second." | release is a step (A9, A15) |
+| Longest arrest | "With cessation of blood flow for up to 100 seconds" (abstract) | holds swept up to 100 s |
+| Corneal reflex | "The corneal reflex returned within 5 to 10 seconds after cuff release, depending on the duration of the blood flow occlusion." | context: another response that lags release by seconds |
+| Release at fixation | "If the blood supply was restored when the subject's eyes became fixed, no convulsions occurred." | context |
+| Heart rate | "For periods of arrest of cerebral circulation up to 30 seconds, the heart rate did not change markedly" | supports A10 |
+
+**Not in the text:** when the cuff was released relative to loss of
+consciousness, what exactly the "3 to 11.5 seconds" measures (it sits in a
+paragraph about consciousness but is not defined), and whether it depended on
+how long the arrest lasted.
+
 S1 and S2 report the **same experiments**; they are not independent
 confirmations.
 
@@ -390,7 +406,11 @@ compressed.
    (1935) is the best lead and is not reachable. The threshold stays fitted
    (ASSUMPTIONS.md, A6).
 2. **Recovery time after a choke, in seconds.** Mitchell (S3) says only
-   "almost immediately". Rossen (S1/S2) remains the only timed recovery data.
+   "almost immediately". Rossen (S1/S2) remains the only timed recovery data,
+   and the texts opened do not say how long the cuff stayed on after
+   consciousness was lost or how recovery was defined. Stage 5 fails against
+   it; a second timed data set would be needed before adding any recovery
+   delay to the model.
 3. **Kety & Schmidt (1948)** values: citations verified, PDFs not reachable.
 4. **Independent arterial O2 content** to check the derived 0.169 ml/ml.
 5. **Rossen (1943) original**: only the reprint (S1) and the review (S2) were

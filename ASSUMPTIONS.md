@@ -156,3 +156,21 @@ laboratory study of police officers (S3), read the same three ways as in A11.
 - Chokes that close the windpipe instead of the arteries are outside the
   model: it has no lungs and holds blood oxygen constant (Gap 8).
 
+
+
+**A15. Recovery is the same threshold crossed the other way (stage 5).** The
+model calls the person conscious again when C/C0 climbs back above the
+threshold θ it was fitted with for passing out. Nothing else is added.
+- Release is a step back to normal flow. S2 says cuff deflation was
+  "instantaneous"; S3 says velocity "promptly returned" to baseline.
+- How long the cuff stayed on after consciousness was lost is not in the
+  texts opened, so stage 5 sweeps it from 0.5 s to 100 s (S2: arrests "up to
+  100 seconds") and also reports the slowest recovery the model can produce
+  at all: refilling from completely empty.
+- The observed "3 to 11.5 seconds" (S1/S2) is taken to be the time from
+  release to the return of consciousness. The sources do not define it.
+- The model fails this test (results/stage5_recovery.txt). It has one store
+  of oxygen that refills as fast as blood flows back in, and no delay between
+  oxygen returning and consciousness returning. A delay, or a higher
+  threshold for waking than for passing out, would each need a new number and
+  there is no second timed data set to test one on, so neither is added.

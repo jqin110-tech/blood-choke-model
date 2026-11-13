@@ -94,11 +94,16 @@ def flow_left(reading: str, mca_left: float, vertebral_share: float) -> float:
     return (1.0 - vertebral_share) * mca_left + vertebral_share
 
 
-def run_one(x: dict[str, float]) -> dict[str, float]:
-    """Model outputs for one draw of the inputs."""
+def draw_params(x: dict[str, float]) -> tuple[Params, float]:
+    """The physiology for one draw, and the threshold fitted to Rossen for it (A6)."""
     p = Params(cbf=x["cbf"] / SECONDS_PER_MINUTE, cmro2=x["cmro2"] / SECONDS_PER_MINUTE,
                oef=x["oef"], cbv=x["cbv"], vertebral_share=x["vertebral_share"], kappa=x["kappa"])
-    theta = fit_threshold(p, rossen_cuff(x["rossen_vertebral_open"]), x["rossen_loc_s"])
+    return p, fit_threshold(p, rossen_cuff(x["rossen_vertebral_open"]), x["rossen_loc_s"])
+
+
+def run_one(x: dict[str, float]) -> dict[str, float]:
+    """Model outputs for one draw of the inputs."""
+    p, theta = draw_params(x)
     out = {
         "threshold": theta,
         # A plain blood choke: carotids shut at once, vertebrals open.

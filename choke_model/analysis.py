@@ -8,7 +8,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.optimize import brentq
 
-from .model import Choke, consumption, fit_threshold, rhs, simulate
+from .model import NO_CHOKE, Choke, consumption, fit_threshold, o2_fraction_at, rhs, simulate
 from .params import ROSSEN_LOC_S, Params
 
 
@@ -96,3 +96,51 @@ def loc_time(p: Params, choke: Choke, threshold: float, t_max: float = 3600.0) -
             return float(sol.t_events[0][0])
         t, y = t_stop, [sol.y[0, -1]]
     return np.nan
+
+
+def refill_time(p: Params, start_fraction: float, target_fraction: float, t_max: float = 600.0) -> float:
+    """Seconds at normal flow for C/C0 to climb from start_fraction to target_fraction.
+
+    Returns 0 if it starts at or above the target, nan if it never gets there.
+    """
+    if start_fraction >= target_fraction:
+        return 0.0
+
+    def reached(t: float, y: np.ndarray, *_: object) -> float:
+        return y[0] / p.baseline_o2 - target_fraction
+
+    reached.terminal = True
+    sol = solve_ivp(rhs, (0.0, t_max), [start_fraction * p.baseline_o2], args=(p, NO_CHOKE),
+                    events=reached, rtol=1e-8, atol=1e-11)
+    return float(sol.t_events[0][0]) if sol.t_events[0].size else np.nan
+
+
+def refill_level(p: Params, start_fraction: float, seconds: float) -> float:
+    """C/C0 reached after `seconds` of normal flow, starting from start_fraction."""
+    if seconds <= 0:
+        return start_fraction
+    sol = solve_ivp(rhs, (0.0, seconds), [start_fraction * p.baseline_o2], args=(p, NO_CHOKE),
+                    rtol=1e-8, atol=1e-11)
+    return float(sol.y[0, -1] / p.baseline_o2)
+
+
+def recovery_time(p: Params, choke: Choke, threshold: float, hold_after_loc_s: float) -> float:
+    """Model time from release until C/C0 is back above the threshold (A15).
+
+    The choke starts at t = 0 and is released hold_after_loc_s after the
+    model's own LOC. Returns nan if the choke never causes LOC.
+    """
+    t_loc = loc_time(p, choke, threshold)
+    if np.isnan(t_loc):
+        return np.nan
+    at_release = o2_fraction_at(p, choke, t_loc + hold_after_loc_s)
+    return refill_time(p, at_release, threshold)
+
+
+def slowest_possible_recovery(p: Params, threshold: float) -> float:
+    """Upper limit on the model's recovery time: refilling from completely empty.
+
+    No hold, however long, can leave less than zero oxygen, so no release can
+    take longer than this to climb back to the threshold.
+    """
+    return refill_time(p, 0.0, threshold)

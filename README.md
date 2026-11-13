@@ -8,6 +8,8 @@ Work in progress. Stage 1 (reading): [SOURCES.md](SOURCES.md),
 [ASSUMPTIONS.md](ASSUMPTIONS.md), `python -m scripts.stage2_model`.
 Stage 3 (checks): `python -m scripts.stage3_check`.
 Stage 4 (uncertainty): `python -m scripts.stage4_uncertainty` (about 3 minutes).
+Stage 5 (recovery after release, a test the model fails):
+`python -m scripts.stage5_recovery` (about 2 minutes).
 UFC check (model vs chokes timed in UFC fights): `python -m scripts.ufc_check`.
 Interactive pages, both built by `python -m scripts.build_simulator` from the
 same parameters, with a test that checks their JavaScript copy of the equation

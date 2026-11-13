@@ -12,7 +12,9 @@ import argparse
 import json
 from pathlib import Path
 
-from choke_model.analysis import carotid_cut_for_flow, central_threshold, loc_time, rossen_threshold_corners
+from choke_model.analysis import (
+    carotid_cut_for_flow, central_threshold, loc_time, rossen_threshold_corners, slowest_possible_recovery,
+)
 from choke_model.model import Choke
 from choke_model.params import (
     FIXATION_BEFORE_LOC_S, MITCHELL_FIXATION_MEAN_S, MITCHELL_FIXATION_RANGE_S,
@@ -77,6 +79,7 @@ def xray_config(p: Params) -> dict:
         "fixationSd": MITCHELL_FIXATION_SD_S,
         "fixationBeforeLoc": FIXATION_BEFORE_LOC_S,
         "rossenRecovery": ROSSEN_RECOVERY_S,
+        "slowestRecoveryS": round(slowest_possible_recovery(p, central_threshold(p)), 2),
         "ufc": ufc_config(p),
         "scenarios": [
             {"id": "lost", "name": "Full compression: the 16 officers who lost consciousness",

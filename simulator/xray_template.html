@@ -211,7 +211,7 @@ legend { padding: 0; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
         <li><strong>Which parts go dark.</strong> The brain is split into just two zones, a front fed by the carotids and a back fed by the vertebrals. Real brains share supply through connecting arteries, and the model cannot say which exact regions fail first.</li>
         <li><strong>The moving dots and fading arteries.</strong> Faster dots and brighter arteries mean more flow. They are not real blood speeds, and the fine arteries are not individually modelled.</li>
         <li><strong>The eye.</strong> It shuts when the model's state is unconscious and opens when it is conscious again. It is a cue for that state, not a result of its own. The sign the studies timed is the eyes becoming fixed (Mitchell 2012), which the drawing does not show.</li>
-        <li><strong>Waking up.</strong> The model recovers faster than people do, and that part has not been checked yet.</li>
+        <li id="note-waking"></li>
       </ul>
     </section>
   </div>
@@ -292,7 +292,7 @@ const CONFIG = /*__CONFIG__*/;
       if (crossedAt !== null && recoveredAt === null && before < X.threshold && front >= X.threshold) {
         recoveredAt = now;
         addLog(now, `Back above the threshold ${(now - releasedAt).toFixed(1)} s after release. Model: conscious again.`,
-          "The model recovers faster than the measured times. This part is unchecked.");
+          "The model recovers faster than the measured times. It fails this test (stage 5 in the repo).");
       }
       if (phase === "held" && now >= X.maxHoldS) {
         if (crossedAt === null) addLog(now, `Still above the threshold. Lowest oxygen in the front of the brain: ${pct(lowest)}.`, scenario.outcome);
@@ -342,6 +342,7 @@ const CONFIG = /*__CONFIG__*/;
     + [4, 6, 8, 10, 12].map((t) => `<span style="left:${along(t)}">${t} s</span>`).join("") + `</span><span></span></div>`
     + `<div class="ufc-lines"><i style="left:${along(U.model.A)}"></i><i class="b" style="left:${along(U.model.B)}"></i><i class="now" id="ufc-now" hidden></i></div>`;
   $("ufc-lede").innerHTML = `Chokes end ${(100 * U.shareOfOutcomes).toFixed(1)}% of UFC fights (${U.finishes} fights), and the rear naked choke is ${(100 * U.rncShare).toFixed(0)}% of them. Most end with a tap; ${(100 * U.locShare).toFixed(0)}% end with the fighter unconscious (Stellpflug 2022). When ${U.n} of those were timed from video, the fighter went out <strong>${U.measured[0].t[0].toFixed(1)} s</strong> after the choke was set, on average, with a 95% interval of ${U.measured[0].t[1]} to ${U.measured[0].t[2]} s (Stellpflug 2020).`;
+  $("note-waking").innerHTML = `<strong>Waking up.</strong> This is where the model fails. Its oxygen is back above the threshold within about ${X.slowestRecoveryS.toFixed(0)} s of release however long the hold, and people took ${X.rossenRecovery[0]} to ${X.rossenRecovery[1]} s (Rossen 1943). The model has no delay between oxygen returning and consciousness returning.`;
   $("ufc-key-a").textContent = `model: ${U.model.A.toFixed(1)} s`;
   $("ufc-key-b").textContent = `model if the vertebral arteries keep normal flow: ${U.model.B.toFixed(1)} s`;
   $("ufc-model").innerHTML = `<strong>What the model says.</strong> It puts the brain below its threshold at ${U.model.A.toFixed(1)} s, inside the measured interval, if the whole brain loses flow the way the measured arteries did. If only the carotid arteries close and the vertebral arteries keep their normal flow, it says ${U.model.B.toFixed(1)} s, which is too slow. The model was not tuned to these fights. Its flow numbers come from a laboratory study of neck restraint (Mitchell 2012), because nobody has measured blood flow during a fight.`;

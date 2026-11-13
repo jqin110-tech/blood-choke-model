@@ -51,6 +51,10 @@ NJEMANZE_VELOCITY_THRESHOLD = 0.5                # secondary, via S3: LOC if vel
 ROSSEN_LOC_MEAN_SECONDARY_S = (6.41, 6.91)       # S10: secondary mean, reanalysis not opened
 ROSSEN_RECOVERY_MEAN_SECONDARY_S = 6.14          # S11: secondary mean, n = 28
 FIXATION_BEFORE_LOC_S = (0.5, 1.0)    # S1/S2: eyes fixed 1/2 to 1 s before LOC
+# Recovery (stage 5). Rossen's 3-11.5 s above is the only timed recovery data.
+ROSSEN_MAX_ARREST_S = 100.0           # S2 abstract: "cessation of blood flow for up to 100 seconds"
+ROSSEN_CORNEAL_RETURN_S = (5.0, 10.0)  # S2: corneal reflex "returned within 5 to 10 seconds after cuff release"
+MITCHELL_RELEASE_AFTER_FIXATION_S = (1.0, 2.0)   # S3: released "1-2 sec after ocular fixation"
 
 # Chokes in UFC fights, timed from video (S12, abstract). Held out from the fit.
 UFC_LOC_MEAN_S = 9.0                  # "mean time from the establishment of a choke to LOC of 9.0 s"

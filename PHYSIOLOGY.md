@@ -46,6 +46,18 @@ consciousness. What the sources do **not** give us directly is how low "far
 enough" is, expressed as an oxygen level. That is the biggest open gap (see
 SOURCES.md, Gaps).
 
+## Waking up after release
+
+In the 1943 cuff experiments the "response to restoration of blood flow" took
+3 to 11.5 seconds (S1/S2), and one later paper gives their mean as 6.14 s
+(S11, secondary). The cuff let go in "a fraction of a second" (S2), so the
+wait is not the blood supply coming back slowly. Other responses lagged too:
+the corneal reflex came back 5 to 10 seconds after release, "depending on the
+duration" of the arrest (S2). After a neck restraint released a second or two
+past eye fixation, recovery was "almost immediately" (S3, no time given). The
+sources opened do not say what sets the delay, and the model has nothing in
+it that could produce one (ASSUMPTIONS.md, A15).
+
 ## Chokes in UFC fights
 
 Chokes end about one UFC fight in six: 904 fight-ending chokes, 15.5 % of all
