@@ -131,9 +131,9 @@ legend { padding: 0; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
     <section class="panel">
       <h2>What is illustration only</h2>
       <ul>
-        <li><strong>The anatomy.</strong> It is a hand-drawn schematic, not to scale. The left and right arteries overlap in this side view.</li>
+        <li><strong>The anatomy.</strong> It is a drawing made for this page, not a real scan and not to scale. The folds of the brain, the fine arteries and the bone detail are decoration, and many of them are placed at random. The left and right arteries overlap in this side view.</li>
         <li><strong>Which parts go dark.</strong> The brain is split into just two zones, a front fed by the carotids and a back fed by the vertebrals. Real brains share supply through connecting arteries, and the model cannot say which exact regions fail first.</li>
-        <li><strong>The moving dots.</strong> Their speed shows more or less flow. It is not a real blood speed.</li>
+        <li><strong>The moving dots and fading arteries.</strong> Faster dots and brighter arteries mean more flow. They are not real blood speeds, and the fine arteries are not individually modelled.</li>
         <li><strong>Waking up.</strong> The model recovers faster than people do, and that part has not been checked yet.</li>
       </ul>
     </section>
@@ -260,7 +260,7 @@ const CONFIG = /*__CONFIG__*/;
 
   // ---- drawing helpers ------------------------------------------------------
   // Smooth curve through points (Catmull-Rom), returned as a dense polyline.
-  function spline(pts, closed, per = 14) {
+  function spline(pts, closed, per = 12) {
     const out = [], n = pts.length;
     const at = (i) => closed ? pts[(i + n) % n] : pts[Math.max(0, Math.min(n - 1, i))];
     const segs = closed ? n : n - 1;
@@ -277,11 +277,13 @@ const CONFIG = /*__CONFIG__*/;
     if (!closed) out.push(pts[n - 1]);
     return out;
   }
-  function trace(poly, closed) {
-    ctx.beginPath();
-    poly.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
-    if (closed) ctx.closePath();
+  function toPath(poly, closed, into) {
+    const p = into || new Path2D();
+    poly.forEach((q, i) => (i ? p.lineTo(q[0], q[1]) : p.moveTo(q[0], q[1])));
+    if (closed) p.closePath();
+    return p;
   }
+  const shape = (pts) => toPath(spline(pts, true), true);
   function measure(poly) {
     const d = [0];
     for (let i = 1; i < poly.length; i++) d.push(d[i - 1] + Math.hypot(poly[i][0] - poly[i - 1][0], poly[i][1] - poly[i - 1][1]));
@@ -296,154 +298,667 @@ const CONFIG = /*__CONFIG__*/;
   }
   const mix = (a, b, f) => a.map((v, i) => Math.round(v + (b[i] - v) * f));
   const rgb = (c, alpha = 1) => `rgba(${c[0]},${c[1]},${c[2]},${alpha})`;
+  // Seeded random numbers, so the decorative detail is the same on every load.
+  function rng(seed) {
+    return () => {
+      seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const hit = document.createElement("canvas").getContext("2d");
+  const inside = (path, x, y) => hit.isPointInPath(path, x, y);
+  const insideWithMargin = (path, x, y, m) => inside(path, x - m, y) && inside(path, x + m, y) && inside(path, x, y - m) && inside(path, x, y + m);
 
-  // ---- anatomy (schematic, side view facing left) ---------------------------
-  const HEAD = new Path2D("M250 330 C250 200 340 108 452 108 C592 108 676 218 676 350 C676 452 634 520 586 560 C566 600 566 700 574 900 L330 900 C336 810 332 745 322 702 C300 692 252 692 216 682 C190 672 186 642 200 622 C194 607 190 596 198 586 C186 576 186 561 200 556 C190 546 181 536 186 521 C152 516 141 500 160 480 C186 440 215 400 226 380 C240 360 250 346 250 330 Z");
-  const SKULL = spline([[262, 338], [282, 236], [352, 152], [452, 122], [552, 132], [630, 190], [664, 282], [664, 378], [636, 462], [596, 532], [540, 566], [470, 552], [400, 528], [330, 494], [284, 446], [264, 396]], true);
-  const JAW = spline([[370, 522], [390, 544], [386, 628], [360, 668], [300, 678], [234, 674], [212, 652], [236, 638], [300, 642], [342, 628], [354, 562], [350, 530]], true);
-  const CEREBRUM = spline([[286, 342], [302, 252], [362, 172], [452, 142], [540, 152], [608, 202], [642, 282], [642, 360], [614, 428], [560, 452], [500, 446], [442, 462], [384, 468], [324, 440], [290, 392]], true);
-  const CEREBELLUM = spline([[536, 470], [590, 462], [628, 486], [622, 524], [584, 544], [546, 530], [526, 500]], true);
-  const BRAINSTEM = spline([[452, 458], [498, 462], [504, 520], [506, 600], [482, 600], [472, 530]], true);
-  const SULCI = [
-    [[330, 300], [372, 262], [420, 250], [452, 214]], [[352, 400], [402, 372], [452, 380], [498, 346]],
-    [[424, 190], [462, 232], [452, 292], [486, 322]], [[516, 190], [530, 242], [572, 262], [580, 312]],
-    [[322, 362], [362, 342], [392, 310]], [[540, 392], [582, 372], [612, 330]], [[392, 432], [446, 424], [490, 410]],
-    [[488, 262], [520, 300], [512, 350]], [[572, 216], [606, 260], [622, 300]],
-  ].map((p) => spline(p, false));
-  const SPINE = Array.from({ length: 7 }, (_, i) => ({ x: 484 + i * 6, y: 606 + i * 42 }));
+  // ---- anatomy (schematic side view, facing left) ---------------------------
+  // Everything in this section is drawing only. None of it feeds the model.
+  const HEAD = shape([[455, 90], [390, 96], [330, 122], [284, 164], [254, 220], [240, 280], [236, 335], [233, 368], [240, 396],
+    [228, 426], [206, 462], [184, 492], [170, 506], [174, 520], [196, 526], [203, 534], [194, 550], [188, 562], [200, 571],
+    [192, 582], [198, 598], [210, 608], [204, 628], [207, 654], [226, 680], [270, 692], [318, 700], [346, 716], [352, 748],
+    [346, 780], [352, 812], [354, 860], [350, 905], [350, 960], [640, 960], [622, 905], [606, 840], [599, 760], [599, 700],
+    [606, 646], [624, 596], [654, 540], [682, 470], [696, 390], [692, 300], [668, 216], [624, 150], [564, 108], [510, 92]]);
+  const VAULT = shape([[250, 398], [246, 374], [250, 330], [256, 270], [276, 206], [320, 150], [382, 114], [455, 104], [524, 110],
+    [588, 138], [644, 196], [676, 280], [682, 372], [668, 452], [656, 488], [630, 524], [596, 548], [560, 562], [534, 568],
+    [506, 566], [482, 558], [450, 528], [410, 508], [370, 498], [345, 470], [336, 440], [322, 412], [296, 399], [266, 394]]);
+  const CAVITY = shape([[264, 384], [262, 330], [268, 274], [288, 214], [330, 162], [388, 128], [455, 118], [520, 124], [580, 150],
+    [632, 204], [662, 284], [668, 370], [656, 444], [640, 480], [622, 516], [592, 540], [556, 554], [530, 558], [500, 556],
+    [484, 548], [462, 510], [440, 472], [424, 450], [416, 462], [404, 468], [392, 460], [386, 446], [360, 432], [330, 420],
+    [296, 408], [270, 398]]);
+  const RING = new Path2D(); RING.addPath(VAULT); RING.addPath(CAVITY);
+  const BASE = shape([[336, 440], [346, 486], [372, 506], [420, 518], [462, 536], [484, 560], [500, 556], [484, 548], [462, 510],
+    [440, 472], [424, 450], [416, 462], [404, 468], [392, 460], [386, 446], [360, 432]]);
+  const FACE = shape([[250, 399], [240, 420], [229, 441], [239, 453], [246, 478], [239, 500], [224, 512], [232, 521], [226, 545],
+    [270, 549], [337, 547], [346, 524], [341, 497], [352, 487], [408, 491], [439, 496], [441, 485], [410, 478], [364, 470],
+    [334, 454], [326, 424], [319, 405], [296, 399], [266, 394]]);
+  const ORBIT = shape([[288, 403], [304, 407], [314, 421], [316, 440], [307, 456], [290, 462], [274, 456], [266, 441], [267, 421], [275, 409]]);
+  FACE.addPath(ORBIT);
+  const MANDIBLE = shape([[226, 592], [224, 612], [218, 634], [221, 654], [238, 667], [262, 670], [305, 666], [350, 657], [386, 648], [403, 635],
+    [409, 606], [418, 560], [428, 524], [437, 507], [430, 498], [420, 505], [410, 525], [396, 515], [386, 498], [380, 512],
+    [376, 550], [366, 584], [340, 592], [280, 594], [240, 594]]);
+  const MASTOID = shape([[458, 520], [478, 516], [494, 532], [492, 560], [482, 576], [470, 560], [462, 540]]);
+  const AIRWAY = spline([[372, 512], [386, 560], [394, 620], [394, 680], [384, 730], [378, 790], [376, 850], [376, 910]], false);
+  const CORD = spline([[507, 596], [503, 655], [499, 700], [498, 740], [501, 780], [507, 822], [516, 866], [524, 910]], false);
+  const SPINE = [[460, 612, 40, 34, 46], [455, 655, 40, 30, 34], [452, 696, 40, 30, 34], [452, 737, 41, 30, 36], [455, 778, 42, 31, 44],
+    [461, 820, 43, 32, 58], [470, 864, 45, 34, 62]].map((v, i, all) => {
+    const a = all[Math.max(0, i - 1)], b = all[Math.min(all.length - 1, i + 1)];
+    return { x: v[0], y: v[1], w: v[2], h: v[3], spinous: v[4], angle: Math.atan2(b[1] - a[1], b[0] - a[0]) - Math.PI / 2 };
+  });
 
-  const vessel = (zone, width, pts) => { const poly = spline(pts, false); const d = measure(poly); return { zone, width, poly, d, length: d[d.length - 1] }; };
+  const CEREBRUM_BASE = spline([[276, 344], [282, 286], [304, 226], [344, 176], [398, 144], [458, 130], [520, 136], [576, 160],
+    [622, 204], [650, 264], [659, 324], [652, 382], [632, 420], [598, 438], [556, 446], [514, 462], [470, 480], [424, 488],
+    [382, 480], [352, 456], [346, 436], [356, 418], [372, 410], [350, 407], [318, 402], [294, 394], [279, 374]], true);
+  const CEREBELLUM = shape([[520, 472], [552, 456], [592, 452], [622, 466], [630, 492], [616, 518], [588, 536], [554, 542], [528, 528], [514, 500]]);
+  const BRAINSTEM = shape([[456, 446], [448, 470], [452, 498], [466, 520], [482, 544], [494, 568], [500, 600], [516, 600], [512, 566],
+    [510, 536], [504, 506], [498, 476], [492, 450]]);
+
+  // Scalloped edge: the outline dips inward where a fold meets it.
+  function scallop(poly, rand, spacing, depth) {
+    const d = measure(poly.concat([poly[0]])), total = d[d.length - 1];
+    const cusps = [];
+    for (let s = rand() * spacing; s < total - spacing * 0.6; s += spacing * (0.7 + 0.6 * rand())) cusps.push(s);
+    let area = 0;
+    for (let i = 0; i < poly.length; i++) { const a = poly[i], b = poly[(i + 1) % poly.length]; area += a[0] * b[1] - b[0] * a[1]; }
+    const sign = area > 0 ? 1 : -1;
+    const out = [], notches = [];
+    let k = 0;
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[(i - 1 + poly.length) % poly.length], b = poly[(i + 1) % poly.length];
+      const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+      const nx = -sign * (b[1] - a[1]) / len, ny = sign * (b[0] - a[0]) / len;   // inward normal
+      while (k < cusps.length - 1 && d[i] > cusps[k + 1]) k++;
+      const lo = cusps[k], hi = k + 1 < cusps.length ? cusps[k + 1] : cusps[0] + total;
+      const s = d[i] < lo ? d[i] + total : d[i];
+      const u = Math.max(0, Math.min(1, (s - lo) / (hi - lo)));
+      const dip = depth * Math.pow(1 - Math.sin(Math.PI * u), 2.2);
+      out.push([poly[i][0] + nx * dip, poly[i][1] + ny * dip]);
+      if (i > 0 && d[i - 1] <= lo && d[i] > lo) notches.push({ x: out[i][0], y: out[i][1], angle: Math.atan2(ny, nx) });
+    }
+    return { poly: out, notches };
+  }
+
+  // The folds of the cerebrum: a few named ones placed by hand, the rest grown
+  // at random so that they keep an even spacing. Decoration only.
+  function buildCortex() {
+    const rand = rng(41);
+    const edge = scallop(CEREBRUM_BASE, rand, 27, 5.5);
+    const outline = toPath(edge.poly, true);
+    // A gentle wobble, so the hand-placed folds do not look ruled.
+    const wobble = (poly) => {
+      const d = measure(poly), phase = rand() * 6.283, wave = 30 + rand() * 16;
+      return poly.map((p, i) => {
+        const a = poly[Math.max(0, i - 1)], b = poly[Math.min(poly.length - 1, i + 1)];
+        const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+        const off = 3 * Math.sin(phase + (6.283 * d[i]) / wave) * Math.min(1, d[i] / 12, (d[d.length - 1] - d[i]) / 12);
+        return [p[0] - ((b[1] - a[1]) / len) * off, p[1] + ((b[0] - a[0]) / len) * off];
+      });
+    };
+    const major = [
+      [[358, 418], [400, 399], [450, 377], [500, 353], [538, 331], [556, 302]],          // lateral fissure
+      [[478, 134], [471, 188], [457, 240], [454, 290], [441, 338]],                      // central
+      [[437, 146], [429, 198], [417, 250], [413, 300], [403, 350]],
+      [[520, 142], [513, 198], [501, 250], [495, 298], [485, 334]],
+      [[423, 202], [380, 207], [340, 229], [313, 262]],
+      [[409, 291], [370, 290], [331, 306], [303, 330]],
+      [[507, 230], [550, 221], [595, 250], [624, 300]],
+      [[384, 441], [430, 425], [480, 405], [530, 381], [570, 350]],
+      [[401, 467], [450, 455], [500, 437], [548, 415]],
+      [[301, 371], [340, 377], [371, 392]],
+      [[581, 401], [610, 371], [637, 340]],
+      [[601, 184], [589, 222]],
+    ].map((p) => wobble(spline(p, false, 10)));
+    const cell = 3, cols = Math.ceil(VW / cell), rows = Math.ceil(VH / cell);
+    const taken = new Uint8Array(cols * rows);
+    const mark = (poly, r) => {
+      for (const [x, y] of poly) for (let dy = -r; dy <= r; dy += cell) for (let dx = -r; dx <= r; dx += cell) {
+        if (dx * dx + dy * dy > r * r) continue;
+        const cx = Math.floor((x + dx) / cell), cy = Math.floor((y + dy) / cell);
+        if (cx >= 0 && cy >= 0 && cx < cols && cy < rows) taken[cy * cols + cx] = 1;
+      }
+    };
+    const free = (x, y) => !taken[Math.floor(y / cell) * cols + Math.floor(x / cell)];
+    const GAP = 9;
+    for (const m of major) mark(m, GAP);
+    const minor = [];
+    // Short folds running in from the notches in the edge.
+    for (const n of edge.notches) {
+      const poly = [[n.x, n.y]];
+      let a = n.angle + (rand() - 0.5) * 0.5, x = n.x, y = n.y;
+      const len = 10 + rand() * 20;
+      for (let s = 0; s < len; s += 3) {
+        a += (rand() - 0.5) * 0.3; x += 3 * Math.cos(a); y += 3 * Math.sin(a);
+        if (!inside(outline, x, y) || (s > 6 && !free(x, y))) break;
+        poly.push([x, y]);
+      }
+      if (poly.length > 2) minor.push(poly);
+    }
+    for (const m of minor) mark(m, GAP - 2);
+    // Preferred direction of a fold at a point, loosely following real brains.
+    const sylvian = (x) => 418 - 0.489 * (x - 360);
+    function preferred(x, y) {
+      if (x > 350 && x < 570 && y > sylvian(x) + 6) return -0.455;                    // temporal lobe: along the fissure
+      if (x > 405 && x < 535 && y < sylvian(x)) return 1.757;                         // around the central fold
+      if (x <= 405) return Math.atan2(y - 400, x - 430) + Math.PI / 2;                // frontal lobe: arcs
+      return Math.atan2(y - 330, x - 540) + Math.PI / 2 + (rand() - 0.5) * 1.6;       // back: loose arcs
+    }
+    function arm(x, y, a, len) {
+      const poly = [];
+      let bend = (rand() - 0.5) * 0.2;
+      for (let s = 0; s < len; s += 3) {
+        bend = Math.max(-0.3, Math.min(0.3, bend * 0.9 + (rand() - 0.5) * 0.2)); a += bend;
+        x += 3 * Math.cos(a); y += 3 * Math.sin(a);
+        if (!free(x, y) || !insideWithMargin(outline, x, y, 6)) break;
+        poly.push([x, y]);
+      }
+      return poly;
+    }
+    for (let attempt = 0; attempt < 12000; attempt++) {
+      const x = 270 + rand() * 395, y = 125 + rand() * 370;
+      if (!free(x, y) || !insideWithMargin(outline, x, y, 8)) continue;
+      const a = preferred(x, y) + (rand() - 0.5) * 0.8;
+      const poly = arm(x, y, a + Math.PI, 14 + rand() * 60).reverse().concat([[x, y]], arm(x, y, a, 14 + rand() * 60));
+      if (poly.length < 5) continue;
+      mark(poly, GAP);
+      minor.push(spline(poly.filter((_, i) => i % 2 === 0 || i === poly.length - 1), false, 3));
+    }
+    const majorPath = new Path2D(), minorPath = new Path2D();
+    for (const m of major) toPath(m, false, majorPath);
+    for (const m of minor) toPath(m, false, minorPath);
+    return { outline, majorPath, minorPath };
+  }
+  const CORTEX = buildCortex();
+  const CEREBRUM = CORTEX.outline;
+
+  // Cerebellum: tight, nearly parallel leaves.
+  const FOLIA = new Path2D();
+  for (let i = 0; i < 17; i++) {
+    const y = 458 + i * 5.4, sag = 10 - i * 0.9;
+    toPath(spline([[512, y + 8], [545, y + sag * 0.4], [585, y - sag * 0.3], [634, y + sag * 0.6]], false, 8), false, FOLIA);
+  }
+
+  // ---- arteries ---------------------------------------------------------------
+  // Named trunks are placed by hand; the fine branches are grown at random.
+  // A tube that narrows along its length, as a filled outline.
+  function ribbon(v, scale) {
+    const left = [], right = [], n = v.poly.length;
+    for (let i = 0; i < n; i++) {
+      const a = v.poly[Math.max(0, i - 1)], b = v.poly[Math.min(n - 1, i + 1)], p = v.poly[i];
+      const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+      const half = (v.widthAt(v.d[i]) * (scale ? scale(v.d[i]) : 1)) / 2;
+      const nx = (-(b[1] - a[1]) / len) * half, ny = ((b[0] - a[0]) / len) * half;
+      left.push([p[0] + nx, p[1] + ny]); right.push([p[0] - nx, p[1] - ny]);
+    }
+    return toPath(left.concat(right.reverse()), true);
+  }
+  const vessel = (zone, width, pts, taper = 0.45) => {
+    const poly = spline(pts, false); const d = measure(poly), length = d[d.length - 1];
+    const v = { zone, width, poly, d, length, path: toPath(poly, false), widthAt: (s) => width * (1 - (1 - taper) * (s / length)) };
+    v.tube = ribbon(v);
+    return v;
+  };
   const VESSELS = [
-    vessel("front", 7, [[396, 900], [398, 810], [400, 730], [408, 650], [424, 580], [430, 525], [418, 484], [400, 458]]),
-    vessel("front", 4, [[400, 458], [352, 432], [312, 382], [302, 312], [332, 242], [392, 194], [462, 174]]),
-    vessel("front", 4, [[400, 458], [420, 412], [440, 352], [470, 292], [522, 242]]),
-    vessel("front", 4, [[400, 458], [442, 432], [492, 402], [532, 362], [552, 302]]),
-    vessel("front", 3, [[440, 352], [402, 322], [372, 282]]),
-    vessel("front", 3, [[470, 292], [452, 242], [470, 200]]),
-    vessel("back", 5, [[524, 900], [514, 810], [502, 730], [494, 660], [486, 600], [478, 545], [474, 505], [470, 472], [468, 452]]),
-    vessel("back", 4, [[468, 452], [512, 440], [562, 422], [606, 382], [626, 322]]),
-    vessel("back", 3, [[474, 505], [520, 500], [566, 506], [602, 496]]),
-    vessel("back", 3, [[562, 422], [590, 438], [612, 420]]),
+    vessel("front", 7.0, [[414, 905], [413, 820], [414, 760], [418, 700], [424, 640], [432, 590], [438, 548], [434, 516], [418, 496], [404, 480], [410, 462], [400, 448], [386, 436]], 0.7),
+    vessel("front", 3.8, [[386, 436], [356, 416], [322, 384], [300, 336], [304, 280], [330, 226], [376, 184], [432, 160], [492, 152], [540, 164]]),
+    vessel("front", 4.4, [[386, 436], [410, 414], [446, 392], [488, 370], [526, 344], [552, 312]]),
+    vessel("front", 2.6, [[410, 414], [396, 372], [378, 326], [352, 286]]),
+    vessel("front", 2.6, [[446, 392], [438, 340], [440, 286], [424, 232]]),
+    vessel("front", 2.6, [[488, 370], [494, 316], [486, 258], [498, 204]]),
+    vessel("front", 2.6, [[526, 344], [548, 290], [560, 240]]),
+    vessel("front", 2.4, [[430, 402], [450, 432], [492, 440], [530, 428]]),
+    vessel("front", 2.2, [[400, 424], [404, 452], [436, 468]]),
+    vessel("front", 2.2, [[304, 280], [338, 290], [366, 276]]),
+    vessel("front", 2.2, [[376, 184], [392, 222], [420, 240]]),
+    vessel("back", 5.0, [[492, 905], [484, 822], [479, 780], [476, 740], [477, 700], [480, 655], [484, 624], [500, 604], [526, 598], [533, 580], [516, 566], [498, 554], [484, 532], [468, 508], [458, 482], [462, 456], [470, 440]], 0.7),
+    vessel("back", 3.4, [[470, 440], [504, 432], [548, 420], [592, 396], [624, 356], [636, 306]]),
+    vessel("back", 2.4, [[592, 396], [616, 404], [636, 388]]),
+    vessel("back", 2.4, [[548, 420], [574, 372], [600, 330]]),
+    vessel("back", 2.4, [[624, 356], [606, 300], [612, 250]]),
+    vessel("back", 2.6, [[462, 470], [498, 478], [540, 470], [584, 468], [614, 482]]),
+    vessel("back", 2.4, [[462, 496], [510, 508], [556, 504], [600, 502]]),
+    vessel("back", 2.4, [[492, 546], [520, 536], [556, 528], [590, 522]]),
   ];
-  // Fixed dots along each vessel; they are shifted by a phase that grows with flow.
-  const SPACING = 26;
-  for (const v of VESSELS) v.phase = Math.random() * SPACING;
-  const PINCH = { x: 400, y: 742 };  // where the carotid is drawn narrowed
+  const SPACING = 24;
+  // Tubes and centre lines grouped by zone, so each zone is painted in one go.
+  // The carotid trunk (the first vessel) is kept apart because it changes shape.
+  const GROUPS = { front: { tubes: new Path2D(), lines: new Path2D() }, back: { tubes: new Path2D(), lines: new Path2D() } };
+  VESSELS.forEach((v, i) => { if (i > 0) GROUPS[v.zone].tubes.addPath(v.tube); GROUPS[v.zone].lines.addPath(v.path); });
+  { const r = rng(5); for (const v of VESSELS) v.phase = r() * SPACING; }
 
-  const WARM = [255, 176, 122], COLD = [44, 60, 82], DARK = [16, 24, 34];
+  function buildTwigs() {
+    const rand = rng(97);
+    const twigs = { front: [new Path2D(), new Path2D(), new Path2D()], back: [new Path2D(), new Path2D(), new Path2D()] };
+    const allowed = {
+      front: (x, y) => x < 600 && inside(CEREBRUM, x, y),
+      back: (x, y) => (x > 545 && inside(CEREBRUM, x, y)) || inside(CEREBELLUM, x, y) || inside(BRAINSTEM, x, y),
+    };
+    // Fine branches keep clear of each other, so the tree stays readable.
+    const cell = 3, cols = Math.ceil(VW / cell), taken = new Uint8Array(cols * Math.ceil(VH / cell));
+    const at = (x, y) => Math.floor(y / cell) * cols + Math.floor(x / cell);
+    const mark = (poly) => { for (const [x, y] of poly) for (let dy = -3; dy <= 3; dy += 3) for (let dx = -3; dx <= 3; dx += 3) taken[at(x + dx, y + dy)] = 1; };
+    for (const v of VESSELS) mark(v.poly);
+    function grow(zone, x, y, a, len, depth) {
+      const poly = [[x, y]];
+      let bend = (rand() - 0.5) * 0.12;
+      for (let s = 0; s < len; s += 3) {
+        bend = Math.max(-0.16, Math.min(0.16, bend * 0.92 + (rand() - 0.5) * 0.07)); a += bend;
+        x += 3 * Math.cos(a); y += 3 * Math.sin(a);
+        if (!allowed[zone](x, y) || (s > 9 && taken[at(x, y)])) break;
+        poly.push([x, y]);
+      }
+      if (poly.length < 4) return;
+      toPath(spline(poly.filter((_, i) => i % 2 === 0 || i === poly.length - 1), false, 3), false, twigs[zone][depth]);
+      mark(poly);
+      if (depth < 2) {
+        // Fork near the end, and sometimes once along the way.
+        const [ex, ey] = poly[poly.length - 1];
+        const spread = 0.3 + rand() * 0.3;
+        grow(zone, ex, ey, a + spread, len * (0.5 + rand() * 0.25), depth + 1);
+        grow(zone, ex, ey, a - spread, len * (0.5 + rand() * 0.25), depth + 1);
+        if (poly.length > 8 && rand() < 0.6) {
+          const m = poly[Math.floor(poly.length * (0.35 + rand() * 0.3))];
+          grow(zone, m[0], m[1], a + (rand() < 0.5 ? 1 : -1) * (0.6 + rand() * 0.4), len * 0.5, depth + 1);
+        }
+      }
+    }
+    for (const v of VESSELS) {
+      let side = rand() < 0.5 ? 1 : -1;
+      for (let i = 5; i < v.poly.length - 1; i += 5 + Math.floor(rand() * 5)) {
+        const [x, y] = v.poly[i];
+        if (!allowed[v.zone](x, y)) continue;
+        const a = Math.atan2(v.poly[i + 1][1] - v.poly[i - 1][1], v.poly[i + 1][0] - v.poly[i - 1][0]);
+        grow(v.zone, x, y, a + side * (0.5 + rand() * 0.5), 26 + rand() * 40, 0);
+        side = -side;
+      }
+      // Let each named artery end in a spray of fine branches.
+      const end = v.poly[v.poly.length - 1], prev = v.poly[v.poly.length - 3];
+      if (v.width < 6 && allowed[v.zone](end[0], end[1])) {
+        const a = Math.atan2(end[1] - prev[1], end[0] - prev[0]);
+        for (const off of [-0.45, 0, 0.45]) grow(v.zone, end[0], end[1], a + off, 24 + rand() * 30, 1);
+      }
+    }
+    return twigs;
+  }
+  const TWIGS = buildTwigs();
+
+  // Where the carotid is drawn narrowed.
+  const PINCH = { x: 414, y: 760 };
+  const PINCH_S = (() => { const v = VESSELS[0]; let best = 0; v.poly.forEach((p, i) => { if (Math.abs(p[1] - PINCH.y) < Math.abs(v.poly[best][1] - PINCH.y)) best = i; }); return v.d[best]; })();
+
+  // ---- static layers (painted once per size) ---------------------------------
+  const BONE = [206, 228, 246];
+  // Bone as a thin shell: faint through the middle, brightest at its edges.
+  function bone(c, path, fill, stroke, width = 1.2, rule = "nonzero", glow = 0) {
+    c.fillStyle = rgb(BONE, fill); c.fill(path, rule);
+    if (glow) {
+      c.save(); c.clip(path, rule);
+      c.shadowColor = rgb(BONE, 0.9); c.shadowBlur = glow * c.getTransform().a;
+      c.strokeStyle = rgb(BONE, 0.3); c.lineWidth = 2; c.stroke(path);
+      c.restore();
+    }
+    if (stroke) { c.strokeStyle = rgb(BONE, stroke); c.lineWidth = width; c.stroke(path); }
+  }
+  function speckle(c, path, rule, box, count, rand, alpha) {
+    c.save(); c.clip(path, rule);
+    c.fillStyle = rgb(BONE, alpha);
+    for (let i = 0; i < count; i++) {
+      const x = box[0] + rand() * box[2], y = box[1] + rand() * box[3], r = 0.5 + rand() * 1.1;
+      c.beginPath(); c.arc(x, y, r, 0, 6.283); c.fill();
+    }
+    c.restore();
+  }
+  function tooth(c, x, y, w, crown, root, lean, up, roots) {
+    // (x, y) is the middle of the biting edge. `up` is -1 for upper teeth.
+    c.save(); c.translate(x, y); c.rotate(lean); c.scale(1, up);
+    const below = new Path2D();
+    if (roots === 2) {
+      below.moveTo(-w / 2 + 1, crown); below.lineTo(-w / 2 + 2.5, crown + root); below.lineTo(-1.2, crown + 4);
+      below.lineTo(1.2, crown + 4); below.lineTo(w / 2 - 2.5, crown + root * 0.9); below.lineTo(w / 2 - 1, crown);
+    } else {
+      below.moveTo(-w / 2 + 1.5, crown); below.quadraticCurveTo(-w / 5, crown + root * 0.8, 0.5, crown + root);
+      below.quadraticCurveTo(w / 4, crown + root * 0.7, w / 2 - 1.5, crown);
+    }
+    below.closePath(); bone(c, below, 0.13, 0.3, 0.8);
+    const top = new Path2D();
+    if (roots === 2) {
+      top.moveTo(-w / 2 + 1, crown); top.quadraticCurveTo(-w / 2 - 0.6, crown * 0.5, -w / 2 + 0.8, crown * 0.22);
+      top.quadraticCurveTo(-w / 4, -1.6, 0, 1.8); top.quadraticCurveTo(w / 4, -1.6, w / 2 - 0.8, crown * 0.22);
+      top.quadraticCurveTo(w / 2 + 0.6, crown * 0.5, w / 2 - 1, crown);
+    } else {
+      top.moveTo(-w / 2 + 1.2, crown); top.quadraticCurveTo(-w / 2 - 0.4, crown * 0.45, -w * 0.16, 0.4);
+      top.quadraticCurveTo(0, -0.8, w * 0.16, 0.4); top.quadraticCurveTo(w / 2 + 0.4, crown * 0.45, w / 2 - 1.2, crown);
+    }
+    top.closePath(); bone(c, top, 0.5, 0.7, 0.9);
+    c.restore();
+  }
+  function vertebra(c, v) {
+    c.save(); c.translate(v.x, v.y); c.rotate(v.angle);
+    const w = v.w, h = v.h, s = v.spinous;
+    const body = new Path2D();
+    body.moveTo(-w / 2 + 4, -h / 2); body.lineTo(w / 2 - 3, -h / 2 + 1);
+    body.quadraticCurveTo(w / 2 - 3.5, 0, w / 2 - 2, h / 2 - 1); body.lineTo(-w / 2 + 2, h / 2);
+    body.quadraticCurveTo(-w / 2 + 5, 0, -w / 2 + 4, -h / 2); body.closePath();
+    bone(c, body, 0.12, 0.6, 1.2, "nonzero", 9);
+    const pillar = new Path2D();
+    pillar.moveTo(w / 2 + 2, -h / 2 - 3); pillar.lineTo(w / 2 + 25, -h / 2 + 5); pillar.lineTo(w / 2 + 30, h / 2 + 5); pillar.lineTo(w / 2 + 8, h / 2 - 5); pillar.closePath();
+    bone(c, pillar, 0.07, 0.3, 1, "nonzero", 5);
+    const blade = new Path2D();
+    blade.moveTo(w / 2 + 28, -h / 2 + 5);
+    blade.quadraticCurveTo(w / 2 + 34 + s * 0.6, -3, w / 2 + 34 + s, 7);
+    blade.quadraticCurveTo(w / 2 + 40 + s, 15, w / 2 + 31 + s, 18);
+    blade.quadraticCurveTo(w / 2 + 34 + s * 0.5, 12, w / 2 + 30, h / 2 + 3); blade.closePath();
+    bone(c, blade, 0.08, 0.4, 1, "nonzero", 7);
+    c.restore();
+  }
+  function jagged(c, pts, rand, amp) {
+    const poly = spline(pts, false, 9);
+    c.beginPath();
+    poly.forEach((p, i) => {
+      const a = poly[Math.max(0, i - 1)], b = poly[Math.min(poly.length - 1, i + 1)];
+      const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, off = (i % 2 ? 1 : -1) * amp * (0.4 + rand());
+      const x = p[0] - (b[1] - a[1]) / len * off, y = p[1] + (b[0] - a[0]) / len * off;
+      if (i) c.lineTo(x, y); else c.moveTo(x, y);
+    });
+    c.stroke();
+  }
+
+  function paintBack(c, S) {
+    const rand = rng(11);
+    const bg = c.createRadialGradient(450, 380, 40, 450, 430, 640);
+    bg.addColorStop(0, "#0b1721"); bg.addColorStop(0.6, "#060c13"); bg.addColorStop(1, "#010203");
+    c.fillStyle = bg; c.fillRect(0, 0, VW, VH);
+    c.strokeStyle = "rgba(120,165,200,0.05)"; c.lineWidth = 1;
+    c.beginPath();
+    for (let x = 50; x < VW; x += 50) { c.moveTo(x, 0); c.lineTo(x, VH); }
+    for (let y = 50; y < VH; y += 50) { c.moveTo(0, y); c.lineTo(VW, y); }
+    c.stroke();
+
+    // Soft tissue: faint, brighter toward the skin edge.
+    const flesh = c.createRadialGradient(450, 400, 60, 450, 450, 430);
+    flesh.addColorStop(0, "rgba(150,190,222,0.13)"); flesh.addColorStop(1, "rgba(150,190,222,0.055)");
+    c.fillStyle = flesh; c.fill(HEAD);
+    c.save(); c.clip(HEAD);
+    c.shadowColor = "rgba(170,212,242,0.6)"; c.shadowBlur = 16 * S;
+    c.strokeStyle = "rgba(170,212,242,0.4)"; c.lineWidth = 3; c.stroke(HEAD);
+    c.shadowBlur = 0;
+    // Airway: a darker column. The tongue: a faint mass.
+    c.lineCap = "round"; c.lineJoin = "round";
+    c.strokeStyle = "rgba(0,2,5,0.4)"; c.lineWidth = 21; c.stroke(toPath(AIRWAY, false));
+    c.fillStyle = "rgba(150,190,222,0.05)";
+    c.fill(shape([[236, 578], [290, 566], [346, 576], [372, 612], [366, 656], [320, 664], [262, 656], [234, 620]]));
+    // Small soft-tissue detail: the eye, the mouth, a neck muscle, the voice box and windpipe rings.
+    c.beginPath(); c.arc(273, 432, 17, 0, 6.283); c.fill();
+    c.strokeStyle = "rgba(170,212,242,0.2)"; c.lineWidth = 1;
+    c.beginPath(); c.ellipse(259, 432, 3.5, 7.5, 0, 0, 6.283); c.stroke();
+    c.beginPath(); c.moveTo(199, 571); c.quadraticCurveTo(214, 566, 232, 569); c.stroke();
+    c.beginPath(); c.ellipse(190, 515, 5, 2.6, -0.5, 0, 6.283); c.stroke();
+    c.strokeStyle = "rgba(150,190,222,0.045)"; c.lineWidth = 34;
+    c.stroke(toPath(spline([[492, 548], [470, 640], [432, 760], [392, 905]], false), false));
+    const box = shape([[361, 722], [379, 715], [392, 726], [393, 758], [381, 768], [364, 762], [357, 742]]);
+    c.fillStyle = "rgba(170,212,242,0.07)"; c.fill(box); c.strokeStyle = "rgba(170,212,242,0.26)"; c.lineWidth = 1; c.stroke(box);
+    c.strokeStyle = "rgba(170,212,242,0.22)"; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(389, 694); c.quadraticCurveTo(376, 676, 381, 652); c.stroke();
+    c.fillStyle = "rgba(170,212,242,0.16)";
+    for (let y = 778; y < 900; y += 11) { c.beginPath(); c.roundRect(364 - (y - 778) * 0.02, y, 7, 5.5, 2); c.fill(); }
+    c.restore();
+    c.strokeStyle = "rgba(184,216,240,0.5)"; c.lineWidth = 1.2; c.stroke(HEAD);
+
+    // Bone. Overlapping bone adds up, as it does on film.
+    c.globalCompositeOperation = "lighter";
+    for (const v of SPINE) vertebra(c, v);
+    {
+      // First two neck bones: the peg of the second, and the ring of the first.
+      const peg = new Path2D(); peg.roundRect(452, 562, 17, 40, 7); bone(c, peg, 0.15, 0.5);
+      const front = new Path2D(); front.ellipse(444, 575, 7, 10, 0.1, 0, 6.283); bone(c, front, 0.2, 0.6);
+      const mass = new Path2D(); mass.ellipse(480, 577, 15, 8, 0.1, 0, 6.283); bone(c, mass, 0.1, 0.32);
+      const arch = shape([[498, 572], [530, 574], [556, 578], [568, 586], [556, 592], [528, 586], [498, 584]]); bone(c, arch, 0.14, 0.45);
+      const hyoid = shape([[360, 700], [372, 696], [400, 686], [402, 691], [376, 704], [366, 712], [358, 708]]); bone(c, hyoid, 0.16, 0.5);
+    }
+    c.strokeStyle = "rgba(150,190,222,0.16)"; c.lineWidth = 13; c.lineCap = "butt"; c.stroke(toPath(CORD, false));
+    bone(c, BASE, 0.12, 0.25, 1, "nonzero", 8);
+    bone(c, MASTOID, 0.07, 0.25, 1, "nonzero", 6);
+    speckle(c, MASTOID, "nonzero", [455, 512, 45, 70], 60, rand, 0.25);
+    bone(c, RING, 0.16, 0, 1, "evenodd", 10);
+    speckle(c, RING, "evenodd", [240, 100, 450, 480], 2600, rand, 0.09);
+    bone(c, FACE, 0.10, 0.5, 1.2, "evenodd", 12);
+    speckle(c, FACE, "evenodd", [222, 392, 222, 160], 260, rand, 0.08);
+    bone(c, MANDIBLE, 0.10, 0.55, 1.3, "nonzero", 12);
+    speckle(c, MANDIBLE, "nonzero", [214, 495, 230, 180], 380, rand, 0.08);
+    // Sinuses and the ear canal: thin rims.
+    c.lineWidth = 1; c.strokeStyle = rgb(BONE, 0.35);
+    c.beginPath(); c.ellipse(256, 381, 4.5, 11, 0.12, 0, 6.283); c.stroke();
+    c.beginPath(); c.ellipse(399, 487, 15, 9, 0.2, 0, 6.283); c.stroke();
+    c.beginPath(); c.ellipse(452, 512, 5.5, 4.5, 0, 0, 6.283); c.stroke();
+    // Teeth, front (left) to back.
+    const teeth = [[8, 20, 20, -0.36, 1], [8, 19, 19, -0.28, 1], [9, 20, 25, -0.16, 1], [9.5, 15, 19, -0.05, 1], [9.5, 14, 18, 0, 1], [15, 13, 16, 0, 2], [15, 13, 16, 0.03, 2], [13, 12, 13, 0.06, 2]];
+    let tx = 230;
+    for (const [w, crown, root, lean, roots] of teeth) {
+      tooth(c, tx + w / 2, 567.5 - Math.abs(lean) * 5, w, crown, root, lean, -1, roots);
+      tooth(c, tx + w / 2 + 4, 568.5 - Math.abs(lean) * 12, w - 0.5, crown - 1.5, root + 2, -lean * 0.7, 1, roots);
+      tx += w + 1.4;
+    }
+    // Skull: outer and inner surfaces.
+    c.globalCompositeOperation = "source-over";
+    c.shadowColor = "rgba(190,226,250,0.7)"; c.shadowBlur = 9 * S;
+    c.strokeStyle = "rgba(218,236,250,0.8)"; c.lineWidth = 2.2; c.stroke(VAULT);
+    c.shadowBlur = 0;
+    c.strokeStyle = "rgba(218,236,250,0.5)"; c.lineWidth = 1.2; c.stroke(CAVITY);
+    c.fillStyle = "rgba(2,6,10,0.35)"; c.fill(CAVITY);
+  }
+
+  function soft(c, path, steps) {
+    // Several strokes of shrinking width: a soft-edged dark groove.
+    for (const [width, alpha] of steps) { c.strokeStyle = `rgba(0,0,0,${alpha})`; c.lineWidth = width; c.stroke(path); }
+  }
+  function paintShade(c, S) {
+    // Grey shading, multiplied over the tissue colour: white leaves it alone.
+    c.lineCap = "round"; c.lineJoin = "round";
+    for (const [path, rim] of [[CEREBELLUM, 12], [BRAINSTEM, 9], [CEREBRUM, 18]]) {
+      c.save(); c.clip(path);
+      c.fillStyle = "#fff"; c.fillRect(0, 0, VW, VH);
+      if (path === CEREBRUM) {
+        const light = c.createRadialGradient(410, 240, 30, 460, 330, 300);
+        light.addColorStop(0, "rgba(0,0,0,0)"); light.addColorStop(0.5, "rgba(0,0,0,0.10)"); light.addColorStop(1, "rgba(0,0,0,0.38)");
+        c.fillStyle = light; c.fillRect(0, 0, VW, VH);
+        soft(c, CORTEX.majorPath, [[13, 0.07], [9, 0.10], [5.5, 0.18], [2.6, 0.5]]);
+        soft(c, CORTEX.minorPath, [[10, 0.06], [6.5, 0.10], [3.8, 0.17], [1.5, 0.48]]);
+      } else if (path === CEREBELLUM) {
+        c.fillStyle = "rgba(0,0,0,0.14)"; c.fillRect(0, 0, VW, VH);
+        soft(c, FOLIA, [[3.6, 0.14], [1.3, 0.45]]);
+      } else {
+        const side = c.createLinearGradient(446, 0, 516, 0);
+        side.addColorStop(0, "rgba(0,0,0,0.30)"); side.addColorStop(0.45, "rgba(0,0,0,0.04)"); side.addColorStop(1, "rgba(0,0,0,0.34)");
+        c.fillStyle = side; c.fillRect(0, 0, VW, VH);
+        c.strokeStyle = "rgba(0,0,0,0.16)"; c.lineWidth = 1;
+        for (let i = 0; i < 9; i++) { c.beginPath(); c.moveTo(444, 462 + i * 6); c.quadraticCurveTo(470, 458 + i * 6.5, 506, 470 + i * 6); c.stroke(); }
+      }
+      c.shadowColor = "rgba(0,0,0,0.8)"; c.shadowBlur = rim * S; c.strokeStyle = "rgba(0,0,0,0.4)"; c.lineWidth = 3; c.stroke(path);
+      c.restore();
+    }
+  }
+  function paintBrain(c, S) {
+    // Light touches drawn over the shaded tissue.
+    c.lineCap = "round"; c.lineJoin = "round";
+    c.save(); c.clip(CEREBRUM);
+    const shine = c.createRadialGradient(390, 215, 10, 400, 240, 190);
+    shine.addColorStop(0, "rgba(255,255,255,0.20)"); shine.addColorStop(1, "rgba(255,255,255,0)");
+    c.fillStyle = shine; c.fillRect(250, 110, 440, 400);
+    c.translate(1.1, 1.4);
+    c.strokeStyle = "rgba(255,255,255,0.16)"; c.lineWidth = 0.9; c.stroke(CORTEX.majorPath); c.lineWidth = 0.7; c.stroke(CORTEX.minorPath);
+    c.restore();
+    c.save(); c.clip(CEREBELLUM); c.translate(0.8, 1); c.strokeStyle = "rgba(255,255,255,0.13)"; c.lineWidth = 0.7; c.stroke(FOLIA); c.restore();
+    for (const path of [CEREBELLUM, BRAINSTEM, CEREBRUM]) { c.strokeStyle = "rgba(240,246,252,0.34)"; c.lineWidth = 1; c.stroke(path); }
+  }
+
+  function paintFront(c, S, narrow) {
+    const rand = rng(23);
+    // Skull seams, faint, crossing in front of the brain.
+    c.strokeStyle = "rgba(214,234,250,0.17)"; c.lineWidth = 1;
+    jagged(c, [[428, 106], [414, 190], [398, 290], [380, 388]], rand, 2.4);
+    jagged(c, [[604, 146], [618, 240], [600, 340], [566, 452]], rand, 2.4);
+    jagged(c, [[380, 388], [410, 340], [470, 322], [530, 348], [566, 452]], rand, 1.8);
+    // Film grain.
+    const tile = document.createElement("canvas"); tile.width = tile.height = 192;
+    const tc = tile.getContext("2d"), img = tc.createImageData(192, 192);
+    for (let i = 0; i < 192 * 192; i++) {
+      const v = 150 + rand() * 105;
+      img.data[i * 4] = v * 0.86; img.data[i * 4 + 1] = v * 0.94; img.data[i * 4 + 2] = v; img.data[i * 4 + 3] = rand() * rand() * 46;
+    }
+    tc.putImageData(img, 0, 0);
+    c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = c.createPattern(tile, "repeat"); c.fillRect(0, 0, c.canvas.width, c.canvas.height); c.restore();
+    const edge = c.createRadialGradient(440, 420, 330, 440, 440, 640);
+    edge.addColorStop(0, "rgba(0,0,0,0)"); edge.addColorStop(1, "rgba(0,0,0,0.6)");
+    c.fillStyle = edge; c.fillRect(0, 0, VW, VH);
+    // Film furniture: corner marks and edge ticks.
+    c.strokeStyle = "rgba(150,190,220,0.5)"; c.lineWidth = 1.2;
+    c.beginPath();
+    for (const [x, y, dx, dy] of [[12, 12, 1, 1], [788, 12, -1, 1], [12, 888, 1, -1], [788, 888, -1, -1]]) {
+      c.moveTo(x + 22 * dx, y); c.lineTo(x, y); c.lineTo(x, y + 22 * dy);
+    }
+    c.stroke();
+    c.strokeStyle = "rgba(150,190,220,0.3)"; c.lineWidth = 1;
+    c.beginPath();
+    for (let y = 60; y <= 840; y += 10) { c.moveTo(12, y); c.lineTo(y % 50 === 10 ? 22 : 16, y); }
+    for (let x = 60; x <= 740; x += 10) { c.moveTo(x, 888); c.lineTo(x, x % 50 === 10 ? 878 : 884); }
+    c.stroke();
+    if (!narrow) {
+      c.fillStyle = "rgba(150,190,220,0.7)"; c.font = "500 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+      c.textAlign = "left"; c.fillText("SIDE VIEW  /  SCHEMATIC, NOT A REAL SCAN", 30, 30);
+    }
+  }
+
+  let layers = null;
+  function buildLayers() {
+    const S = canvas.width / VW;
+    const make = (paint) => {
+      const el = document.createElement("canvas"); el.width = canvas.width; el.height = canvas.height;
+      const c = el.getContext("2d"); c.setTransform(S, 0, 0, S, 0, 0); paint(c, S, NARROW);
+      return el;
+    };
+    layers = { back: make(paintBack), shade: make(paintShade), brain: make(paintBrain), front: make(paintFront) };
+  }
+
+  // ---- moving parts -----------------------------------------------------------
+  const WARM = [255, 186, 132], COLD = [58, 80, 108], DARK = [20, 30, 44];
   function tissue(c) {
     // Fully warm at baseline, fully cold as the threshold is reached.
     const lit = Math.max(0, Math.min(1, (c - X.threshold) / (1 - X.threshold)));
-    const base = mix(COLD, WARM, lit);
-    return c < X.threshold ? mix(DARK, COLD, 0.45) : base;
+    return c < X.threshold ? mix(DARK, COLD, 0.4) : mix(COLD, WARM, lit);
   }
 
-  function drawBrain() {
+  function drawBrain(S) {
     const offFront = front < X.threshold, offBack = back < X.threshold;
     const cf = tissue(front), cb = tissue(back);
-    // Back zone parts.
-    for (const shape of [BRAINSTEM, CEREBELLUM]) {
-      trace(shape, true);
-      ctx.fillStyle = rgb(cb, 0.9); ctx.shadowColor = rgb(cb, 0.8); ctx.shadowBlur = offBack ? 0 : 22 * back; ctx.fill();
-      ctx.shadowBlur = 0; ctx.strokeStyle = rgb([230, 240, 250], 0.35); ctx.lineWidth = 1.2; ctx.stroke();
-    }
+    ctx.fillStyle = rgb(cb, 0.95); ctx.shadowColor = rgb(cb, 0.85); ctx.shadowBlur = offBack ? 0 : 20 * back * S;
+    ctx.fill(BRAINSTEM); ctx.fill(CEREBELLUM);
     // Cerebrum: front colour, blending into the back colour toward the rear.
-    trace(CEREBRUM, true);
-    const g = ctx.createLinearGradient(500, 0, 600, 0);
-    g.addColorStop(0, rgb(cf, 0.92)); g.addColorStop(1, rgb(cb, 0.92));
-    ctx.fillStyle = g; ctx.shadowColor = rgb(cf, 0.9); ctx.shadowBlur = offFront ? 0 : 34 * front; ctx.fill();
-    ctx.shadowBlur = 0; ctx.strokeStyle = rgb([230, 240, 250], offFront ? 0.25 : 0.45); ctx.lineWidth = 1.4; ctx.stroke();
-    ctx.save(); trace(CEREBRUM, true); ctx.clip();
-    ctx.lineWidth = 1.6; ctx.strokeStyle = offFront ? "rgba(140,165,190,0.16)" : "rgba(90,40,30,0.30)";
-    for (const s of SULCI) { trace(s, false); ctx.stroke(); }
-    ctx.restore();
+    const g = ctx.createLinearGradient(520, 0, 615, 0);
+    g.addColorStop(0, rgb(cf, 0.95)); g.addColorStop(1, rgb(cb, 0.95));
+    ctx.fillStyle = g; ctx.shadowColor = rgb(cf, 0.9); ctx.shadowBlur = offFront ? 0 : 30 * front * S; ctx.fill(CEREBRUM);
+    ctx.shadowBlur = 0;
+    ctx.globalCompositeOperation = "multiply"; ctx.drawImage(layers.shade, 0, 0, VW, VH);
+    ctx.globalCompositeOperation = "source-over"; ctx.drawImage(layers.brain, 0, 0, VW, VH);
     if (offFront) {
-      const text = NARROW ? "below threshold" : "below the model's threshold";
-      ctx.font = `600 ${17 * K}px Inter, system-ui, sans-serif`; ctx.textAlign = "center";
-      const w = ctx.measureText(text).width + 24 * K;
-      ctx.fillStyle = "rgba(5,9,13,0.82)"; ctx.beginPath(); ctx.roundRect(410 - w / 2, 300 - 13 * K, w, 34 * K, 8); ctx.fill();
-      ctx.fillStyle = "rgba(230,238,245,0.95)"; ctx.fillText(text, 410, 300 + 10 * K);
+      ctx.save(); ctx.clip(CEREBRUM);
+      ctx.strokeStyle = "rgba(150,182,214,0.22)"; ctx.lineWidth = 1.1; ctx.stroke(CORTEX.majorPath); ctx.lineWidth = 0.8; ctx.stroke(CORTEX.minorPath);
+      ctx.restore();
     }
   }
 
-  function drawVessels(q, progress) {
-    for (const v of VESSELS) {
-      const f = q[v.zone];
-      const col = mix([96, 34, 40], [255, 77, 77], Math.pow(f, 0.6));
-      trace(v.poly, false);
-      ctx.lineCap = "round"; ctx.lineJoin = "round";
-      ctx.strokeStyle = rgb(col, 0.9); ctx.lineWidth = v.width; ctx.shadowColor = rgb(col, 0.9); ctx.shadowBlur = 4 + 12 * f; ctx.stroke();
+  function drawVessels(q, progress, S) {
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    for (const zone of ["front", "back"]) {
+      const f = q[zone], col = mix([74, 26, 38], [255, 86, 80], Math.pow(f, 0.6));
+      ctx.strokeStyle = rgb(col, 0.2 + 0.72 * f);
+      [1.5, 1.0, 0.7].forEach((width, depth) => { ctx.lineWidth = width; ctx.stroke(TWIGS[zone][depth]); });
+    }
+    const squeeze = progress * (1 - scenario.frontFlow);
+    // The carotid trunk is drawn narrower where it is compressed.
+    const narrowed = (s) => 1 - 0.86 * squeeze * Math.exp(-(((s - PINCH_S) / 16) ** 2));
+    for (const zone of ["front", "back"]) {
+      const f = q[zone], col = mix([88, 28, 38], [246, 58, 62], Math.pow(f, 0.6));
+      ctx.fillStyle = rgb(col, 0.96); ctx.shadowColor = rgb(col, 0.9); ctx.shadowBlur = (2 + 8 * f) * S;
+      ctx.fill(GROUPS[zone].tubes, "nonzero");
+      if (zone === "front") ctx.fill(squeeze > 0 ? ribbon(VESSELS[0], narrowed) : VESSELS[0].tube);
       ctx.shadowBlur = 0;
-      ctx.fillStyle = rgb([255, 222, 210], 0.25 + 0.7 * f);
-      for (let s = v.phase % SPACING; s < v.length; s += SPACING) {
-        const p = pointAt(v, s);
-        ctx.beginPath(); ctx.arc(p[0], p[1], Math.max(1.4, v.width * 0.32), 0, 6.283); ctx.fill();
+      ctx.strokeStyle = rgb([255, 190, 180], 0.06 + 0.26 * f); ctx.lineWidth = 0.7; ctx.stroke(GROUPS[zone].lines);
+      ctx.fillStyle = rgb([255, 232, 222], 0.22 + 0.72 * f);
+      ctx.beginPath();
+      for (const v of VESSELS) {
+        if (v.zone !== zone) continue;
+        for (let s = v.phase % SPACING; s < v.length; s += SPACING) {
+          const p = pointAt(v, s), r = Math.max(0.9, v.widthAt(s) * 0.27) * (v === VESSELS[0] ? Math.max(0.45, narrowed(s)) : 1);
+          ctx.moveTo(p[0] + r, p[1]); ctx.arc(p[0], p[1], r, 0, 6.283);
+        }
       }
+      ctx.fill();
     }
-    // The compression: the carotid drawn narrowed, with two pads closing on it.
     if (progress > 0) {
-      const squeeze = progress * (1 - scenario.frontFlow);
-      const edge = 3.5 - 2.8 * squeeze;          // half-width of artery left visible
-      ctx.strokeStyle = "#070d13"; ctx.lineWidth = 6; ctx.lineCap = "butt";
+      // Pressure from both sides of the neck, shown as two bars closing in.
+      const gap = 19 - 12 * squeeze;
+      ctx.shadowColor = "rgba(190,226,250,0.8)"; ctx.shadowBlur = 8 * S;
+      ctx.strokeStyle = "rgba(230,240,250,0.95)"; ctx.lineWidth = 6; ctx.lineCap = "round";
       for (const side of [-1, 1]) {
-        ctx.beginPath(); ctx.moveTo(PINCH.x + side * (edge + 3), PINCH.y - 15); ctx.lineTo(PINCH.x + side * (edge + 3), PINCH.y + 15); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(PINCH.x + side * gap, PINCH.y - 20); ctx.lineTo(PINCH.x + side * gap, PINCH.y + 20); ctx.stroke();
       }
-      const gap = 17 - 8 * squeeze;
-      ctx.strokeStyle = "rgba(230,238,245,0.95)"; ctx.lineWidth = 7; ctx.lineCap = "round";
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "rgba(230,240,250,0.9)";
       for (const side of [-1, 1]) {
-        ctx.beginPath(); ctx.moveTo(PINCH.x + side * gap, PINCH.y - 22); ctx.lineTo(PINCH.x + side * gap, PINCH.y + 22); ctx.stroke();
+        const x = PINCH.x + side * (gap + 20);
+        ctx.beginPath(); ctx.moveTo(x - side * 9, PINCH.y); ctx.lineTo(x, PINCH.y - 6); ctx.lineTo(x, PINCH.y + 6); ctx.closePath(); ctx.fill();
       }
     }
   }
 
-  function label(text, x, y, tx, ty, align) {
-    ctx.strokeStyle = "rgba(143,161,177,0.55)"; ctx.lineWidth = 1;
+  function label(text, x, y, tx, ty, align, sub) {
+    ctx.strokeStyle = "rgba(160,190,214,0.7)"; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(tx, ty); ctx.stroke();
-    ctx.fillStyle = "rgba(200,214,226,0.95)"; ctx.font = `500 ${15 * K}px Inter, system-ui, sans-serif`; ctx.textAlign = align;
-    ctx.fillText(text, tx + (align === "left" ? 6 : -6), ty + 5 * K);
+    ctx.fillStyle = "rgba(160,190,214,0.9)"; ctx.beginPath(); ctx.arc(x, y, 2.2, 0, 6.283); ctx.fill();
+    ctx.textAlign = align;
+    const at = tx + (align === "left" ? 7 : -7);
+    ctx.font = `500 ${15 * K}px Inter, system-ui, sans-serif`;
+    ctx.lineWidth = 4; ctx.strokeStyle = "rgba(2,5,8,0.85)"; ctx.strokeText(text, at, ty + 5 * K);
+    ctx.fillStyle = "rgba(214,228,240,0.97)"; ctx.fillText(text, at, ty + 5 * K);
+    if (sub && !NARROW) {
+      ctx.font = "400 13px Inter, system-ui, sans-serif"; ctx.fillStyle = "rgba(143,161,177,0.95)";
+      ctx.fillText(sub, at, ty + 24);
+    }
   }
 
   function draw() {
     const q = flows();
     const held = phase === "held";
     const progress = held ? Math.min(1, X.rampS > 0 ? (steps * DT) / X.rampS : 1) : 0;
-    ctx.setTransform(canvas.width / VW, 0, 0, canvas.height / VH, 0, 0);
-    const bg = ctx.createRadialGradient(440, 380, 60, 440, 420, 620);
-    bg.addColorStop(0, "#0d1a26"); bg.addColorStop(1, "#020406");
-    ctx.fillStyle = bg; ctx.fillRect(0, 0, VW, VH);
-
-    // Soft tissue, then bone.
-    ctx.fillStyle = "rgba(150,185,215,0.07)"; ctx.fill(HEAD);
-    ctx.strokeStyle = "rgba(170,200,228,0.28)"; ctx.lineWidth = 1.5; ctx.stroke(HEAD);
-    ctx.shadowColor = "rgba(190,220,245,0.5)"; ctx.shadowBlur = 10;
-    ctx.strokeStyle = "rgba(196,222,244,0.55)"; ctx.lineWidth = 5; trace(SKULL, true); ctx.stroke();
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = "rgba(190,215,238,0.10)"; ctx.strokeStyle = "rgba(196,222,244,0.45)"; ctx.lineWidth = 2;
-    trace(JAW, true); ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.ellipse(288, 432, 26, 30, 0, 0, 6.283); ctx.stroke();
-    for (const b of SPINE) {
-      ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(0.14);
-      ctx.beginPath(); ctx.roundRect(-30, -15, 60, 30, 8); ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.roundRect(30, -7, 34, 14, 6); ctx.stroke();
-      ctx.restore();
+    const S = canvas.width / VW;
+    ctx.setTransform(S, 0, 0, S, 0, 0);
+    ctx.drawImage(layers.back, 0, 0, VW, VH);
+    drawBrain(S);
+    drawVessels(q, progress, S);
+    ctx.drawImage(layers.front, 0, 0, VW, VH);
+    if (!reduceMotion) {
+      // A slow band of light moving down the film. Decoration only.
+      const y = ((performance.now() / 1000) * 60) % (VH + 420) - 160;
+      const band = ctx.createLinearGradient(0, y - 80, 0, y + 80);
+      band.addColorStop(0, "rgba(150,205,245,0)"); band.addColorStop(0.5, "rgba(150,205,245,0.05)"); band.addColorStop(1, "rgba(150,205,245,0)");
+      ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = band; ctx.fillRect(0, y - 80, VW, 160);
+      ctx.globalCompositeOperation = "source-over";
     }
 
-    drawBrain();
-    drawVessels(q, progress);
-
-    label(NARROW ? "carotid" : "carotid artery", 396, 838, 290, 838, "right");
-    label(NARROW ? "vertebral" : "vertebral artery", 520, 850, 610, 850, "left");
-    label(NARROW ? "front" : "front of the brain", 318, 232, 206, 150, "right");
-    label(NARROW ? "back" : "back of the brain", 630, 500, 650, 590, "left");
-    if (!NARROW) {
-      ctx.font = "400 13px Inter, system-ui, sans-serif"; ctx.fillStyle = "rgba(143,161,177,0.9)";
-      ctx.textAlign = "right"; ctx.fillText("carotid supply", 200, 172);
-      ctx.textAlign = "left"; ctx.fillText("vertebral supply", 656, 614);
+    label(NARROW ? "carotid" : "carotid artery", 412, 838, 300, 838, "right");
+    label(NARROW ? "vertebral" : "vertebral artery", 486, 846, 640, 852, "left");
+    label(NARROW ? "front" : "front of the brain", 312, 226, 214, 140, "right", "carotid supply");
+    label(NARROW ? "back" : "back of the brain", 626, 500, 650, 600, "left", "vertebral supply");
+    if (progress > 0) label(NARROW ? "compressed" : "carotid arteries compressed", PINCH.x - 44, PINCH.y, 300, PINCH.y, "right");
+    if (front < X.threshold) {
+      const text = NARROW ? "below threshold" : "below the model's threshold";
+      ctx.font = `600 ${16 * K}px Inter, system-ui, sans-serif`; ctx.textAlign = "center";
+      const w = ctx.measureText(text).width + 24 * K;
+      ctx.fillStyle = "rgba(4,8,12,0.84)"; ctx.strokeStyle = "rgba(160,190,214,0.5)"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.roundRect(420 - w / 2, 290 - 13 * K, w, 34 * K, 6); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "rgba(230,238,245,0.97)"; ctx.fillText(text, 420, 290 + 10 * K);
     }
-    if (progress > 0) label(NARROW ? "compressed" : "carotid arteries compressed", PINCH.x - 26, PINCH.y, 290, 742, "right");
-    ctx.textAlign = "left"; ctx.fillStyle = "rgba(143,161,177,0.75)"; ctx.font = "400 13px Inter, system-ui, sans-serif";
+    ctx.textAlign = "left"; ctx.fillStyle = "rgba(143,161,177,0.85)";
     ctx.font = `400 ${13 * K}px Inter, system-ui, sans-serif`;
-    ctx.fillText("Schematic, not to scale", 18, 884);
+    ctx.fillText("Schematic, not to scale", 30, 872);
   }
 
   // ---- frame loop -----------------------------------------------------------
@@ -465,6 +980,7 @@ const CONFIG = /*__CONFIG__*/;
     NARROW = w < 520;
     K = NARROW ? 1.7 : 1;      // text is drawn larger when the scan is shown small
     canvas.width = Math.round(w * scale); canvas.height = Math.round((w * VH / VW) * scale);
+    buildLayers();
   }
   window.addEventListener("resize", fit);
   fit();

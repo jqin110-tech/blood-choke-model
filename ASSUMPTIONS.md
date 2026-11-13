@@ -114,4 +114,10 @@ a "back" zone fed by the vertebrals, with no oxygen passing between them.
 - The drawing itself, the shape and position of the two zones, and the
   moving dots are schematic. No opened source maps which brain regions each
   artery supplies, and real brains share supply through connecting arteries.
+- The anatomical detail (skull, teeth, neck bones, the folds of the brain and
+  the fine arterial branches) is decoration. It was drawn for the page, not
+  taken from an opened source, and most of the folds and fine branches are
+  placed by a seeded random generator. Only two things in the picture carry
+  model output: the colour of each zone (its oxygen level) and the brightness
+  and dot speed of each zone's arteries (its flow).
 
