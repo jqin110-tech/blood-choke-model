@@ -120,4 +120,9 @@ a "back" zone fed by the vertebrals, with no oxygen passing between them.
   placed by a seeded random generator. Only two things in the picture carry
   model output: the colour of each zone (its oxygen level) and the brightness
   and dot speed of each zone's arteries (its flow).
+- The eye shuts when the front zone is below the threshold and opens when it
+  is back above it. It is a second display of the model's conscious or
+  unconscious state, not a separate result. The sign S3 timed is the eyes
+  becoming fixed (a stare), which the drawing does not show; no opened source
+  gives a time for the eyes closing.
 

@@ -141,6 +141,7 @@ legend { padding: 0; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
         <li><strong>The anatomy.</strong> It is a drawing made for this page, not a real scan and not to scale. The folds of the brain, the fine arteries and the bone detail are decoration, and many of them are placed at random. The left and right arteries overlap in this side view.</li>
         <li><strong>Which parts go dark.</strong> The brain is split into just two zones, a front fed by the carotids and a back fed by the vertebrals. Real brains share supply through connecting arteries, and the model cannot say which exact regions fail first.</li>
         <li><strong>The moving dots and fading arteries.</strong> Faster dots and brighter arteries mean more flow. They are not real blood speeds, and the fine arteries are not individually modelled.</li>
+        <li><strong>The eye.</strong> It shuts when the model's state is unconscious and opens when it is conscious again. It is a cue for that state, not a result of its own. The sign the studies timed is the eyes becoming fixed (Mitchell 2012), which the drawing does not show.</li>
         <li><strong>Waking up.</strong> The model recovers faster than people do, and that part has not been checked yet.</li>
       </ul>
     </section>
@@ -500,7 +501,16 @@ if (typeof module !== "undefined") module.exports = ChokeModel;
     if (closed) p.closePath();
     return p;
   }
-  const shape = (pts) => toPath(spline(pts, true), true);
+  // The anatomy was first laid out with too tall a skull. Every hand-placed
+  // point above eye level goes through this: it lowers the dome and leans it
+  // back a little, smoothly, and leaves everything below eye level alone.
+  function warp([x, y]) {
+    if (y >= 400) return [x, y];
+    const t = 400 - y, g = 0.84 * t + 9.6 * (1 - Math.exp(-t / 60));
+    return [x + 0.12 * (g - 40 * (1 - Math.exp(-g / 40))), 400 - g];
+  }
+  const curve = (pts, closed, per) => spline(pts.map(warp), closed, per);
+  const shape = (pts) => toPath(curve(pts, true), true);
   function measure(poly) {
     const d = [0];
     for (let i = 1; i < poly.length; i++) d.push(d[i - 1] + Math.hypot(poly[i][0] - poly[i - 1][0], poly[i][1] - poly[i - 1][1]));
@@ -562,7 +572,7 @@ if (typeof module !== "undefined") module.exports = ChokeModel;
     return { x: v[0], y: v[1], w: v[2], h: v[3], spinous: v[4], angle: Math.atan2(b[1] - a[1], b[0] - a[0]) - Math.PI / 2 };
   });
 
-  const CEREBRUM_BASE = spline([[276, 344], [282, 286], [304, 226], [344, 176], [398, 144], [458, 130], [520, 136], [576, 160],
+  const CEREBRUM_BASE = curve([[276, 344], [282, 286], [304, 226], [344, 176], [398, 144], [458, 130], [520, 136], [576, 160],
     [622, 204], [650, 264], [659, 324], [652, 382], [632, 420], [598, 438], [556, 446], [514, 462], [470, 480], [424, 488],
     [382, 480], [352, 456], [346, 436], [356, 418], [372, 410], [350, 407], [318, 402], [294, 394], [279, 374]], true);
   const CEREBELLUM = shape([[520, 472], [552, 456], [592, 452], [622, 466], [630, 492], [616, 518], [588, 536], [554, 542], [528, 528], [514, 500]]);
@@ -623,7 +633,7 @@ if (typeof module !== "undefined") module.exports = ChokeModel;
       [[301, 371], [340, 377], [371, 392]],
       [[581, 401], [610, 371], [637, 340]],
       [[601, 184], [589, 222]],
-    ].map((p) => wobble(spline(p, false, 10)));
+    ].map((p) => wobble(curve(p, false, 10)));
     const cell = 3, cols = Math.ceil(VW / cell), rows = Math.ceil(VH / cell);
     const taken = new Uint8Array(cols * rows);
     const mark = (poly, r) => {
@@ -651,7 +661,8 @@ if (typeof module !== "undefined") module.exports = ChokeModel;
     }
     for (const m of minor) mark(m, GAP - 2);
     // Preferred direction of a fold at a point, loosely following real brains.
-    const sylvian = (x) => 418 - 0.489 * (x - 360);
+    const s0 = warp([360, 418]), s1 = warp([540, 330]);
+    const sylvian = (x) => s0[1] + ((s1[1] - s0[1]) / (s1[0] - s0[0])) * (x - s0[0]);
     function preferred(x, y) {
       if (x > 350 && x < 570 && y > sylvian(x) + 6) return -0.455;                    // temporal lobe: along the fissure
       if (x > 405 && x < 535 && y < sylvian(x)) return 1.757;                         // around the central fold
@@ -708,7 +719,7 @@ if (typeof module !== "undefined") module.exports = ChokeModel;
     return toPath(left.concat(right.reverse()), true);
   }
   const vessel = (zone, width, pts, taper = 0.45) => {
-    const poly = spline(pts, false); const d = measure(poly), length = d[d.length - 1];
+    const poly = curve(pts, false); const d = measure(poly), length = d[d.length - 1];
     const v = { zone, width, poly, d, length, path: toPath(poly, false), widthAt: (s) => width * (1 - (1 - taper) * (s / length)) };
     v.tube = ribbon(v);
     return v;
@@ -867,7 +878,7 @@ if (typeof module !== "undefined") module.exports = ChokeModel;
     c.restore();
   }
   function jagged(c, pts, rand, amp) {
-    const poly = spline(pts, false, 9);
+    const poly = curve(pts, false, 9);
     c.beginPath();
     poly.forEach((p, i) => {
       const a = poly[Math.max(0, i - 1)], b = poly[Math.min(poly.length - 1, i + 1)];
@@ -891,7 +902,7 @@ if (typeof module !== "undefined") module.exports = ChokeModel;
 
     // Soft tissue: faint, brighter toward the skin edge.
     const flesh = c.createRadialGradient(450, 400, 60, 450, 450, 430);
-    flesh.addColorStop(0, "rgba(150,190,222,0.13)"); flesh.addColorStop(1, "rgba(150,190,222,0.055)");
+    flesh.addColorStop(0, "rgba(150,190,222,0.16)"); flesh.addColorStop(1, "rgba(150,190,222,0.075)");
     c.fillStyle = flesh; c.fill(HEAD);
     c.save(); c.clip(HEAD);
     c.shadowColor = "rgba(170,212,242,0.6)"; c.shadowBlur = 16 * S;
@@ -905,7 +916,12 @@ if (typeof module !== "undefined") module.exports = ChokeModel;
     // Small soft-tissue detail: the eye, the mouth, a neck muscle, the voice box and windpipe rings.
     c.beginPath(); c.arc(273, 432, 17, 0, 6.283); c.fill();
     c.strokeStyle = "rgba(170,212,242,0.2)"; c.lineWidth = 1;
-    c.beginPath(); c.ellipse(259, 432, 3.5, 7.5, 0, 0, 6.283); c.stroke();
+    c.save(); c.lineCap = "round"; c.strokeStyle = "rgba(190,220,244,0.2)"; c.lineWidth = 1.1;
+    for (let i = 0; i < 16; i++) {                                   // eyebrow hairs
+      const u = i / 15, bx = 246 + 44 * u, by = 399 - 9 * Math.sin(Math.PI * (0.15 + 0.7 * u)) + 3 * u;
+      c.beginPath(); c.moveTo(bx, by + 3); c.lineTo(bx + 5, by - 2.5 + 2 * u); c.stroke();
+    }
+    c.restore();
     c.beginPath(); c.moveTo(199, 571); c.quadraticCurveTo(214, 566, 232, 569); c.stroke();
     c.beginPath(); c.ellipse(190, 515, 5, 2.6, -0.5, 0, 6.283); c.stroke();
     c.strokeStyle = "rgba(150,190,222,0.045)"; c.lineWidth = 34;
@@ -1013,6 +1029,16 @@ if (typeof module !== "undefined") module.exports = ChokeModel;
     jagged(c, [[428, 106], [414, 190], [398, 290], [380, 388]], rand, 2.4);
     jagged(c, [[604, 146], [618, 240], [600, 340], [566, 452]], rand, 2.4);
     jagged(c, [[380, 388], [410, 340], [470, 322], [530, 348], [566, 452]], rand, 1.8);
+    // The outer ear, faint, in front of the skull: rim, inner fold and the small flap at the front.
+    c.lineCap = "round"; c.lineJoin = "round";
+    const rim = toPath(spline([[453, 432], [457, 414], [473, 405], [494, 411], [508, 432], [510, 460], [501, 486], [488, 506],
+      [478, 522], [467, 531], [457, 525], [455, 508]], false), false);
+    const fold = toPath(spline([[463, 428], [481, 422], [495, 438], [496, 462], [486, 484], [474, 498]], false), false);
+    const flap = toPath(spline([[455, 462], [462, 468], [463, 478], [456, 488]], false), false);
+    for (const [path, alpha] of [[rim, 0.6], [fold, 0.36], [flap, 0.42]]) {
+      c.strokeStyle = "rgba(4,8,12,0.3)"; c.lineWidth = 3.2; c.stroke(path);
+      c.strokeStyle = `rgba(220,238,252,${alpha})`; c.lineWidth = 1.3; c.stroke(path);
+    }
     // Film grain.
     const tile = document.createElement("canvas"); tile.width = tile.height = 192;
     const tc = tile.getContext("2d"), img = tc.createImageData(192, 192);
@@ -1126,6 +1152,50 @@ if (typeof module !== "undefined") module.exports = ChokeModel;
     }
   }
 
+  // The eye is a cue for the model's state: open while the model is conscious,
+  // shut while it is not. `eye` runs from 0 (shut) to 1 (open).
+  let eye = 1;
+  const eyeTarget = () => (front < X.threshold ? 0 : 1);
+  function drawEye() {
+    const e = eye, L = (shut, open) => shut + (open - shut) * e;
+    const corner = [289, 433.5], low = [260, 441], lowCtl = [273, 444];
+    const up = [L(260.5, 257.5), L(440, 417.5)], upCtl = [L(273, 269), L(443, 414)];
+    const ink = (a) => `rgba(210,230,246,${a})`;
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    // The upper lid: the skin between the crease and the lash line.
+    const lidSkin = new Path2D();
+    lidSkin.moveTo(256.5, 412); lidSkin.quadraticCurveTo(271, 404, 291, 428); lidSkin.lineTo(corner[0], corner[1]);
+    lidSkin.quadraticCurveTo(upCtl[0], upCtl[1], up[0], up[1]); lidSkin.closePath();
+    ctx.fillStyle = "rgba(150,190,222,0.13)"; ctx.fill(lidSkin);
+    if (e > 0.04) {
+      const opening = new Path2D();
+      opening.moveTo(up[0], up[1]); opening.quadraticCurveTo(upCtl[0], upCtl[1], corner[0], corner[1]);
+      opening.quadraticCurveTo(lowCtl[0], lowCtl[1], low[0], low[1]);
+      opening.quadraticCurveTo(253.5, (up[1] + low[1]) / 2, up[0], up[1]);
+      ctx.fillStyle = ink(0.32); ctx.fill(opening);
+      ctx.save(); ctx.clip(opening);
+      ctx.fillStyle = "rgba(92,150,200,0.95)"; ctx.beginPath(); ctx.ellipse(262, 430.5, 4, 10, 0, 0, 6.283); ctx.fill();
+      ctx.fillStyle = "rgba(3,7,11,0.95)"; ctx.beginPath(); ctx.ellipse(260.4, 430.5, 2, 5, 0, 0, 6.283); ctx.fill();
+      ctx.fillStyle = ink(0.9); ctx.beginPath(); ctx.arc(260.2, 427.5, 0.9, 0, 6.283); ctx.fill();
+      ctx.restore();
+      ctx.strokeStyle = ink(0.45 * e); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(up[0], up[1]); ctx.quadraticCurveTo(253.5, (up[1] + low[1]) / 2, low[0], low[1]); ctx.stroke();
+    }
+    ctx.strokeStyle = ink(0.3); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(256.5, 412); ctx.quadraticCurveTo(271, 404, 291, 428); ctx.stroke();
+    ctx.strokeStyle = ink(0.55); ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(low[0], low[1]); ctx.quadraticCurveTo(lowCtl[0], lowCtl[1], corner[0], corner[1]); ctx.stroke();
+    ctx.strokeStyle = ink(0.92); ctx.lineWidth = 1.9;
+    ctx.beginPath(); ctx.moveTo(up[0], up[1]); ctx.quadraticCurveTo(upCtl[0], upCtl[1], corner[0], corner[1]); ctx.stroke();
+    // Lashes swing down as the lid closes.
+    ctx.lineWidth = 1; ctx.strokeStyle = ink(0.8);
+    for (const u of [0, 0.12, 0.24, 0.36]) {
+      const x = (1 - u) * (1 - u) * up[0] + 2 * u * (1 - u) * upCtl[0] + u * u * corner[0];
+      const y = (1 - u) * (1 - u) * up[1] + 2 * u * (1 - u) * upCtl[1] + u * u * corner[1];
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 6.5 + 4 * u, y + L(3.5, -3.5)); ctx.stroke();
+    }
+  }
+
   function label(text, x, y, tx, ty, align, sub) {
     ctx.strokeStyle = "rgba(160,190,214,0.7)"; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(tx, ty); ctx.stroke();
@@ -1148,6 +1218,7 @@ if (typeof module !== "undefined") module.exports = ChokeModel;
     const S = canvas.width / VW;
     ctx.setTransform(S, 0, 0, S, 0, 0);
     ctx.drawImage(layers.back, 0, 0, VW, VH);
+    drawEye();
     drawBrain(S);
     drawVessels(q, progress, S);
     ctx.drawImage(layers.front, 0, 0, VW, VH);
@@ -1162,7 +1233,8 @@ if (typeof module !== "undefined") module.exports = ChokeModel;
 
     label(NARROW ? "carotid" : "carotid artery", 412, 838, 300, 838, "right");
     label(NARROW ? "vertebral" : "vertebral artery", 486, 846, 640, 852, "left");
-    label(NARROW ? "front" : "front of the brain", 312, 226, 214, 140, "right", "carotid supply");
+    const frontAt = warp([312, 226]);
+    label(NARROW ? "front" : "front of the brain", frontAt[0], frontAt[1], 226, 168, "right", "carotid supply");
     label(NARROW ? "back" : "back of the brain", 626, 500, 650, 600, "left", "vertebral supply");
     if (progress > 0) label(NARROW ? "compressed" : "carotid arteries compressed", PINCH.x - 44, PINCH.y, 300, PINCH.y, "right");
     if (front < X.threshold) {
@@ -1170,8 +1242,8 @@ if (typeof module !== "undefined") module.exports = ChokeModel;
       ctx.font = `600 ${16 * K}px Inter, system-ui, sans-serif`; ctx.textAlign = "center";
       const w = ctx.measureText(text).width + 24 * K;
       ctx.fillStyle = "rgba(4,8,12,0.84)"; ctx.strokeStyle = "rgba(160,190,214,0.5)"; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.roundRect(420 - w / 2, 290 - 13 * K, w, 34 * K, 6); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = "rgba(230,238,245,0.97)"; ctx.fillText(text, 420, 290 + 10 * K);
+      ctx.beginPath(); ctx.roundRect(430 - w / 2, 300 - 13 * K, w, 34 * K, 6); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "rgba(230,238,245,0.97)"; ctx.fillText(text, 430, 300 + 10 * K);
     }
     ctx.textAlign = "left"; ctx.fillStyle = "rgba(143,161,177,0.85)";
     ctx.font = `400 ${13 * K}px Inter, system-ui, sans-serif`;
@@ -1186,6 +1258,7 @@ if (typeof module !== "undefined") module.exports = ChokeModel;
     if (phase === "held" || phase === "released") advance(dt);
     const q = flows();
     if (!reduceMotion || phase !== "idle") for (const v of VESSELS) v.phase += 95 * q[v.zone] * dt;
+    eye += (eyeTarget() - eye) * Math.min(1, dt * 7);
     draw();
     if (phase !== "idle" && now - sideTick > 80) { sideTick = now; renderSide(); }
     requestAnimationFrame(frame);
@@ -1203,7 +1276,7 @@ if (typeof module !== "undefined") module.exports = ChokeModel;
   fit();
   resetRun();
   // For checks: jump the model forward without waiting.
-  window.__xray = { advance: (s) => { advance(s); renderSide(); draw(); }, state: () => ({ phase, front, back, crossedAt, recoveredAt, releasedAt }) };
+  window.__xray = { advance: (s) => { advance(s); eye = eyeTarget(); renderSide(); draw(); }, state: () => ({ phase, front, back, crossedAt, recoveredAt, releasedAt, eye }) };
   requestAnimationFrame(frame);
 })();
 </script>
