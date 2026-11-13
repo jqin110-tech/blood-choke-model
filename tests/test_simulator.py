@@ -13,7 +13,7 @@ import pytest
 from choke_model.analysis import choke_for_flow, loc_time
 from choke_model.model import Choke, simulate
 from choke_model.params import SECONDS_PER_MINUTE, Params
-from scripts.build_simulator import PAGES, build_config, build_standalone
+from scripts.build_simulator import PAGES, anatomy_json, build_config, build_fragment, build_standalone
 
 ROOT = Path(__file__).resolve().parents[1]
 MODEL_JS = ROOT / "simulator" / "model.js"
@@ -111,3 +111,44 @@ def test_xray_zones_match_python() -> None:
         else:
             assert js["crossed"] == pytest.approx(expected, abs=0.02)
     assert lost["crossed"] is not None and awake["crossed"] is None
+
+
+def test_anatomy_file_is_well_formed_and_credited() -> None:
+    """The 3D view's anatomy file decodes to what its headers say and keeps its credit."""
+    import base64
+
+    data = json.loads(anatomy_json())
+    assert "BodyParts3D" in data["credit"] and "CC BY 4.0" in data["credit"]
+    expected = {"skin", "skull", "mandible", "teeth", "spine", "cortex", "whiteMatter", "cerebellum", "brainstem", "arteries"}
+    assert set(data["meshes"]) == expected
+    for name, mesh in data["meshes"].items():
+        points = np.frombuffer(base64.b64decode(mesh["positions"]), dtype="<u2").reshape(-1, 3)
+        faces = np.frombuffer(base64.b64decode(mesh["faces"]), dtype="<u4" if mesh["wide"] else "<u2").reshape(-1, 3)
+        assert len(points) == mesh["points"] and len(faces) == mesh["triangles"], name
+        assert faces.max() == mesh["points"] - 1, name
+        low, high = np.array(mesh["low"]), np.array(mesh["high"])
+        assert np.all(low < high) and np.all(np.abs(np.concatenate([low, high])) < 450), name   # fits the 800 x 900 view
+        for field in ("tag", "value"):
+            if field in mesh:
+                assert len(base64.b64decode(mesh[field])) == mesh["points"], name
+    # Both artery groups are present, and so are both carotid trunks (tag bits 2 and 4).
+    tags = np.frombuffer(base64.b64decode(data["meshes"]["arteries"]["tag"]), dtype="u1")
+    assert {0, 1, 2, 4} <= set(np.unique(tags).tolist())
+    # Both brain zones are present in the cortex.
+    assert set(np.unique(np.frombuffer(base64.b64decode(data["meshes"]["cortex"]["tag"]), dtype="u1")).tolist()) == {0, 1}
+    # The left side is the near one (+z), and the face points toward -x.
+    anchors = data["anchors"]
+    assert anchors["pinch"]["left"][2] > 0 > anchors["pinch"]["right"][2]
+    assert {e["side"] for e in data["eyes"]} == {"left", "right"}
+    assert all(e["centre"][0] < anchors["brainCentre"][0] for e in data["eyes"])
+
+
+def test_built_page_carries_the_anatomy_and_its_credit() -> None:
+    """The page that is published embeds the anatomy and shows the credit CC BY asks for."""
+    page = build_fragment("xray_template.html")
+    assert "/*__ANATOMY__*/" not in page and "/*__HEAD3D__*/" not in page
+    assert '"meshes"' in page                                    # the single-file page has the data inlined
+    local = build_standalone("xray_template.html")
+    assert '<script src="anatomy.js"></script>' in local and '"meshes"' not in local
+    assert "BodyParts3D, © The Database Center for Life Science" in page
+    assert "https://creativecommons.org/licenses/by/4.0/" in page

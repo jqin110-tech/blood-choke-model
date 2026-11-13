@@ -111,26 +111,42 @@ a "back" zone fed by the vertebrals, with no oxygen passing between them.
 - This is reading A of A11 applied to the carotid-fed part of the brain only.
   It is **not** used for any number in the results; stages 3 and 4 still use
   the one-box model.
-- The drawing itself, the shape and position of the two zones, and the
-  moving dots are schematic. No opened source maps which brain regions each
+- The picture, the shape and position of the two zones, and the moving
+  pulses are schematic. No opened source maps which brain regions each
   artery supplies, and real brains share supply through connecting arteries.
-- The anatomical detail (skull, teeth, neck bones, the folds of the brain and
-  the fine arterial branches) is decoration. It was drawn for the page, not
-  taken from an opened source, and most of the folds and fine branches are
-  placed by a seeded random generator. Only two things in the picture carry
-  model output: the colour of each zone (its oxygen level) and the brightness
-  and dot speed of each zone's arteries (its flow).
+- The anatomy in the 3D view (skin, skull, jaw, teeth, neck bones, brain and
+  arteries) is a published 3D anatomy model of a reference adult male body,
+  BodyParts3D, used under CC BY 4.0 (see THIRD_PARTY.md) and cut down to the
+  head and neck by `scripts/build_anatomy.mjs`. It is a picture: no number
+  in the model, the results or the README comes from it. Only four things
+  in the picture carry model output: the colour of each zone (its oxygen
+  level), the brightness and pulse speed of each zone's arteries (its flow),
+  the narrowing of the carotids (how far flow is cut) and the eyelids.
+- Three parts of the picture are ours, not the source model's. (1) Which
+  pieces belong to the "back" zone: the cerebellum, the brainstem and the
+  piece the source names the occipital lobe; everything else is "front".
+  (2) Which arteries are drawn as carotid-fed or vertebral-fed: each named
+  artery takes the group of the trunk it is joined to in the 3D model
+  (internal carotid, or vertebral and basilar), and the communicating
+  arteries that join the two systems are drawn with the front group. This
+  is a rule about touching shapes, not a measured supply map. (3) Shapes we
+  added: plain tubes where the source has no artery (between the top of
+  each common carotid and the bottom of the internal carotid above it, and
+  the lowest part of each vertebral artery), the eyes' iris, pupil and
+  lids, and the leaf pattern on the cerebellum. The skin was also smoothed.
 - The eye shuts when the front zone is below the threshold and opens when it
   is back above it. It is a second display of the model's conscious or
   unconscious state, not a separate result. The sign S3 timed is the eyes
   becoming fixed (a stare), which the drawing does not show; no opened source
   gives a time for the eyes closing.
-- The 3D view is the same drawing given depth. Each side outline is swept
-  into a solid, and the widths, the depth of each artery and the way the
-  folds wrap around the brain are made up to look plausible, not taken from
-  an opened source. Turning the head changes nothing in the model. The 3D
-  view needs the three.js library, loaded from a public CDN; without it the
-  page falls back to the flat side view.
+- Turning the head changes nothing in the model. The 3D view needs the
+  three.js library, loaded from a public CDN; without it the page falls back
+  to a flat side view that was drawn by hand for this page and is not real
+  anatomy.
+- Rebuilding the anatomy file needs Node and three npm packages, which is
+  outside the project's Python-only dependency list. That was accepted
+  because the file is committed, so the model, the page build and the tests
+  never run that script.
 - The strip of UFC choke times under the picture shows measured values (S12,
   with the per-type values second-hand) beside the model's times from
   `scripts/ufc_check.py`. Every choke type gets the same prediction (A14).

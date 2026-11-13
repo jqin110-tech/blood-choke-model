@@ -157,19 +157,37 @@ def build_config() -> dict:
 PAGES = {"template.html": "index.html", "xray_template.html": "xray.html"}
 
 
-def build_fragment(template: str = "template.html") -> str:
-    """The page body with the model and the config inlined."""
+ANATOMY_MARK = "/*__ANATOMY__*/"
+
+
+def anatomy_json() -> str:
+    """The 3D view's anatomy data as JSON text (simulator/anatomy.js without its wrapper)."""
+    text = (SIM / "anatomy.js").read_text()
+    return text[text.index("{"):text.rindex("}") + 1]
+
+
+def build_fragment(template: str = "template.html", inline_anatomy: bool = True) -> str:
+    """The page body with the model and the config inlined.
+
+    The anatomy data is about 2 MB. A single-file page needs it inlined; the
+    page in simulator/ loads simulator/anatomy.js instead, so the repo holds
+    one copy.
+    """
     page = (SIM / template).read_text()
     page = page.replace("/*__MODEL__*/", (SIM / "model.js").read_text())
     page = page.replace("/*__HEAD3D__*/", (SIM / "head3d.js").read_text())
+    page = page.replace(ANATOMY_MARK, anatomy_json() if inline_anatomy else "window.ANATOMY")
     return page.replace("/*__CONFIG__*/", json.dumps(build_config(), indent=2))
 
 
 def build_standalone(template: str = "template.html") -> str:
     """A complete HTML document around the fragment, for opening locally."""
+    needs_anatomy = ANATOMY_MARK in (SIM / template).read_text()
     return ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
-            '<meta name="viewport" content="width=device-width, initial-scale=1">\n</head>\n<body>\n'
-            + build_fragment(template) + "\n</body>\n</html>\n")
+            '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+            + ('<script src="anatomy.js"></script>\n' if needs_anatomy else "")
+            + '</head>\n<body>\n'
+            + build_fragment(template, inline_anatomy=False) + "\n</body>\n</html>\n")
 
 
 def main() -> None:

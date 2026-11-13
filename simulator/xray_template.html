@@ -107,6 +107,8 @@ legend { padding: 0; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
 .key .k-now { border-left-color: #fff; }
 .prose { color: var(--muted); font-size: 14px; max-width: 86ch; }
 .prose strong { color: var(--ink); font-weight: 600; }
+.credit { color: var(--muted); font-size: 12.5px; max-width: 110ch; }
+.credit a { color: inherit; }
 @media (max-width: 860px) {
   .ufc { --name: 128px; --val: 46px; }
   .ufc-row { font-size: 13px; gap: 8px; }
@@ -135,12 +137,11 @@ legend { padding: 0; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
   <div class="stage">
     <div class="scan">
       <div class="views" id="views" role="group" aria-label="View">
-        <button type="button" id="view-3d" aria-pressed="true">3D model</button>
-        <button type="button" id="view-film" aria-pressed="false">Side film</button>
+        <span>3D model</span>
         <span class="hint" id="hint">Drag to rotate</span>
       </div>
       <div class="stage3d" id="stage3d">
-        <div class="caption" style="top:12px">3D MODEL / SCHEMATIC, NOT A REAL SCAN, NOT TO SCALE</div>
+        <div class="caption" style="top:12px">3D MODEL / ILLUSTRATION, NOT A SCAN</div>
       </div>
       <canvas id="scan" width="800" height="900" role="img" aria-label="Schematic x-ray of a head and neck showing blood flow to the brain" hidden></canvas>
     </div>
@@ -207,20 +208,24 @@ legend { padding: 0; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
     <section class="panel">
       <h2>What is illustration only</h2>
       <ul>
-        <li><strong>The anatomy.</strong> It is a drawing made for this page, not a real scan and not to scale. The folds of the brain, the fine arteries and the bone detail are decoration, and many of them are placed at random. The 3D model is built from the side drawing, so how wide and how deep each part is was made up too.</li>
-        <li><strong>Which parts go dark.</strong> The brain is split into just two zones, a front fed by the carotids and a back fed by the vertebrals. Real brains share supply through connecting arteries, and the model cannot say which exact regions fail first.</li>
-        <li><strong>The moving dots and fading arteries.</strong> Faster dots and brighter arteries mean more flow. They are not real blood speeds, and the fine arteries are not individually modelled.</li>
+        <li><strong>The anatomy.</strong> The shapes in the 3D view are a published 3D anatomy model of one reference adult male body (BodyParts3D, credited below), cut down to the head and neck. They are a picture only. No number in the model comes from them, and this is not a scan of any fighter. Three things were added for this page and are not from that model: plain tubes where it has no artery (between the lower and upper carotid on each side, and the lowest part of each vertebral artery), the iris, pupil and eyelids, and the leaf pattern on the cerebellum.</li>
+        <li><strong>Which parts go dark.</strong> The brain is split into just two zones, a front fed by the carotids and a back fed by the vertebrals. In the picture the back is the cerebellum, the brainstem and the rearmost lobe, and each artery is coloured by which trunk it is joined to in the 3D model. That split was chosen for this page and is not a measured supply map. Real brains share supply through connecting arteries, and the model cannot say which exact regions fail first.</li>
+        <li><strong>The pulses and fading arteries.</strong> Faster pulses and brighter arteries mean more flow. They are not real blood speeds, and the individual arteries are not modelled.</li>
         <li><strong>The eye.</strong> It shuts when the model's state is unconscious and opens when it is conscious again. It is a cue for that state, not a result of its own. The sign the studies timed is the eyes becoming fixed (Mitchell 2012), which the drawing does not show.</li>
         <li id="note-waking"></li>
       </ul>
     </section>
   </div>
+
+  <p class="credit">3D anatomy: BodyParts3D, © The Database Center for Life Science, licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC Attribution 4.0 International</a>. Prepared for the web by human-atlas, open-anatomy-3d and abussola-med-models (CC BY 4.0), then cropped, simplified and partly filled in for this page, as listed above. For education and illustration, not for diagnosis.</p>
 </div>
+
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 const CONFIG = /*__CONFIG__*/;
 /*__MODEL__*/
+const ANATOMY = /*__ANATOMY__*/;
 /*__HEAD3D__*/
 (() => {
   "use strict";
@@ -1180,32 +1185,12 @@ const CONFIG = /*__CONFIG__*/;
   }
 
   // ---- 3D view -------------------------------------------------------------
-  // Built from the same outlines as the film view. If three.js or WebGL is
-  // missing, the page falls back to the film view alone.
+  // Real anatomy shapes (see head3d.js). If three.js or WebGL is missing, the
+  // page falls back to the flat hand-drawn film view alone.
   let view3d = null, mode = "film";
-  const top = (poly) => Math.min(...poly.map((p) => p[1]));
   try {
     if (window.THREE && typeof buildHead3D === "function") {
-      let tx = 230;
-      view3d = buildHead3D(window.THREE, $("stage3d"), {
-        size: [VW, VH], pivot: [440, 500],
-        head: HEAD.poly, vault: VAULT.poly, face: FACE.poly, mandible: MANDIBLE.poly,
-        cerebrum: CEREBRUM_BASE, cerebellum: CEREBELLUM.poly,
-        stem: curve([[474, 446], [467, 480], [473, 512], [486, 542], [503, 580], [507, 602]], false),
-        cord: CORD, airway: AIRWAY, spine: SPINE,
-        teeth: TEETH.map(([w, crown]) => { const t = { x: tx + w / 2, w, crown }; tx += w + 1.4; return t; }),
-        top: { head: top(HEAD.poly), skull: top(VAULT.poly), brain: top(CEREBRUM_BASE) },
-        zoneBlend: [520, 615], folds: foldMap(), vessels: VESSELS, twigs: TWIGS.lines, spacing: SPACING,
-        inCerebrum: (x, y) => inside(CEREBRUM, x, y), inCerebellum: (x, y) => inside(CEREBELLUM, x, y),
-        pinch: PINCH, pinchAlong: PINCH_S, tagAt: warp([430, 300]),
-        labels: [
-          { name: "front of the brain", short: "front", note: "carotid supply", at: warp([312, 226]), out: 96, spot: [0.035, 0.2] },
-          { name: "back of the brain", short: "back", note: "vertebral supply", at: [612, 478], out: 70, spot: [0.965, 0.72] },
-          { name: "carotid artery", short: "carotid", at: [413, 838], out: 77, spot: [0.035, 0.95] },
-          { name: "vertebral artery", short: "vertebral", at: [486, 846], out: 31, spot: [0.965, 0.95] },
-          { name: "carotid arteries compressed", short: "compressed", at: [PINCH.x, PINCH.y], out: 76, spot: [0.035, 0.85], when: "held" },
-        ],
-      });
+      view3d = buildHead3D(window.THREE, $("stage3d"), { size: [VW, VH], anatomy: ANATOMY});
     }
   } catch (err) {
     console.warn("3D view unavailable, showing the film view instead.", err);
@@ -1215,18 +1200,17 @@ const CONFIG = /*__CONFIG__*/;
     mode = view3d ? next : "film";
     $("stage3d").hidden = mode !== "3d"; canvas.hidden = mode !== "film";
     $("views").hidden = !view3d; $("hint").hidden = mode !== "3d";
-    $("view-3d").setAttribute("aria-pressed", String(mode === "3d")); $("view-film").setAttribute("aria-pressed", String(mode === "film"));
     fit();
   }
-  $("view-3d").addEventListener("click", () => setMode("3d"));
-  $("view-film").addEventListener("click", () => setMode("film"));
 
   function draw3d(seconds) {
     const q = flows();
     const progress = phase === "held" ? Math.min(1, X.rampS > 0 ? (steps * DT) / X.rampS : 1) : 0;
+    const level = (c) => Math.max(0, Math.min(1, (c - X.threshold) / (1 - X.threshold)));
     view3d.render({
-      frontColour: tissue(front), backColour: tissue(back), flow: q, eye, still: reduceMotion,
-      squeeze: progress * (1 - scenario.frontFlow), held: progress > 0, frontOff: front < X.threshold,
+      level: { front: level(front), back: level(back) }, frontOff: front < X.threshold, backOff: back < X.threshold,
+      flow: q, eye, still: reduceMotion, moving: !reduceMotion || phase !== "idle",
+      squeeze: progress * (1 - scenario.frontFlow), held: progress > 0,
     }, seconds);
   }
   const paint = () => (mode === "3d" ? draw3d(performance.now() / 1000) : draw());

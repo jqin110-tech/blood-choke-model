@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="anatomy.js"></script>
 </head>
 <body>
 <title>Blood Choke X-Ray</title>
@@ -114,6 +115,8 @@ legend { padding: 0; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
 .key .k-now { border-left-color: #fff; }
 .prose { color: var(--muted); font-size: 14px; max-width: 86ch; }
 .prose strong { color: var(--ink); font-weight: 600; }
+.credit { color: var(--muted); font-size: 12.5px; max-width: 110ch; }
+.credit a { color: inherit; }
 @media (max-width: 860px) {
   .ufc { --name: 128px; --val: 46px; }
   .ufc-row { font-size: 13px; gap: 8px; }
@@ -142,12 +145,11 @@ legend { padding: 0; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
   <div class="stage">
     <div class="scan">
       <div class="views" id="views" role="group" aria-label="View">
-        <button type="button" id="view-3d" aria-pressed="true">3D model</button>
-        <button type="button" id="view-film" aria-pressed="false">Side film</button>
+        <span>3D model</span>
         <span class="hint" id="hint">Drag to rotate</span>
       </div>
       <div class="stage3d" id="stage3d">
-        <div class="caption" style="top:12px">3D MODEL / SCHEMATIC, NOT A REAL SCAN, NOT TO SCALE</div>
+        <div class="caption" style="top:12px">3D MODEL / ILLUSTRATION, NOT A SCAN</div>
       </div>
       <canvas id="scan" width="800" height="900" role="img" aria-label="Schematic x-ray of a head and neck showing blood flow to the brain" hidden></canvas>
     </div>
@@ -214,15 +216,18 @@ legend { padding: 0; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
     <section class="panel">
       <h2>What is illustration only</h2>
       <ul>
-        <li><strong>The anatomy.</strong> It is a drawing made for this page, not a real scan and not to scale. The folds of the brain, the fine arteries and the bone detail are decoration, and many of them are placed at random. The 3D model is built from the side drawing, so how wide and how deep each part is was made up too.</li>
-        <li><strong>Which parts go dark.</strong> The brain is split into just two zones, a front fed by the carotids and a back fed by the vertebrals. Real brains share supply through connecting arteries, and the model cannot say which exact regions fail first.</li>
-        <li><strong>The moving dots and fading arteries.</strong> Faster dots and brighter arteries mean more flow. They are not real blood speeds, and the fine arteries are not individually modelled.</li>
+        <li><strong>The anatomy.</strong> The shapes in the 3D view are a published 3D anatomy model of one reference adult male body (BodyParts3D, credited below), cut down to the head and neck. They are a picture only. No number in the model comes from them, and this is not a scan of any fighter. Three things were added for this page and are not from that model: plain tubes where it has no artery (between the lower and upper carotid on each side, and the lowest part of each vertebral artery), the iris, pupil and eyelids, and the leaf pattern on the cerebellum.</li>
+        <li><strong>Which parts go dark.</strong> The brain is split into just two zones, a front fed by the carotids and a back fed by the vertebrals. In the picture the back is the cerebellum, the brainstem and the rearmost lobe, and each artery is coloured by which trunk it is joined to in the 3D model. That split was chosen for this page and is not a measured supply map. Real brains share supply through connecting arteries, and the model cannot say which exact regions fail first.</li>
+        <li><strong>The pulses and fading arteries.</strong> Faster pulses and brighter arteries mean more flow. They are not real blood speeds, and the individual arteries are not modelled.</li>
         <li><strong>The eye.</strong> It shuts when the model's state is unconscious and opens when it is conscious again. It is a cue for that state, not a result of its own. The sign the studies timed is the eyes becoming fixed (Mitchell 2012), which the drawing does not show.</li>
         <li id="note-waking"></li>
       </ul>
     </section>
   </div>
+
+  <p class="credit">3D anatomy: BodyParts3D, © The Database Center for Life Science, licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC Attribution 4.0 International</a>. Prepared for the web by human-atlas, open-anatomy-3d and abussola-med-models (CC BY 4.0), then cropped, simplified and partly filled in for this page, as listed above. For education and illustration, not for diagnosis.</p>
 </div>
+
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -522,217 +527,143 @@ const ChokeModel = (() => {
 
 if (typeof module !== "undefined") module.exports = ChokeModel;
 
+const ANATOMY = window.ANATOMY;
 // A 3D head for the x-ray view, drawn with three.js. Illustration only.
 //
-// Every shape is built from the same hand-drawn side outlines as the flat
-// "film" view (passed in as `A`), given depth with a few plain rules: an
-// outline is turned into a solid by sweeping an oval across it, arteries are
-// laid on the surface of the brain, and the folds are a noise pattern. None
-// of it feeds the model. The only things driven by the model are the colour
-// of each brain zone, the brightness and dot speed of each zone's arteries,
-// the narrowing of the carotids and the eyelids (see ASSUMPTIONS.md, A13).
+// The shapes are real anatomy from BodyParts3D (see THIRD_PARTY.md), cut down
+// to the head and neck by scripts/build_anatomy.mjs and passed in as
+// `A.anatomy`. They are a picture: none of them feeds the model. The only
+// things driven by the model are the colour of the two brain zones, the
+// brightness and pulse speed of each zone's arteries, the narrowing of the
+// carotids and the eyelids (see ASSUMPTIONS.md, A13).
 function buildHead3D(THREE, host, A) {
   "use strict";
-  const V3 = THREE.Vector3;
-  // Flat-view coordinates (x right, y down, in drawing pixels) to 3D. The
-  // face points to -x, up is +y, and z runs from the far ear to the near ear.
-  const at = (x, y, z = 0) => new V3(x - A.pivot[0], A.pivot[1] - y, z);
+  const V3 = THREE.Vector3, D = A.anatomy;
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-  // Straight-line lookup through a list of [input, output] pairs.
-  const table = (pairs) => (v) => {
-    if (v <= pairs[0][0]) return pairs[0][1];
-    for (let i = 1; i < pairs.length; i++) {
-      if (v <= pairs[i][0]) {
-        const [a, fa] = pairs[i - 1], [b, fb] = pairs[i];
-        return fa + ((fb - fa) * (v - a)) / (b - a);
-      }
-    }
-    return pairs[pairs.length - 1][1];
-  };
-  const dome = (top, widest, half) => (y) => half * Math.sqrt(Math.max(0, 1 - ((widest - y) / (widest - top)) ** 2));
+  const bytes = (text) => Uint8Array.from(atob(text), (c) => c.charCodeAt(0));
 
-  // ---- solids from side outlines ---------------------------------------------
-  // Sweep an oval across a side outline: at each height the cross-section runs
-  // from the outline's front edge to its back edge and is `halfWidth(y)` wide.
-  // Options: `side` (+1 or -1) builds one half only, with a flat inner face
-  // `gap` from the midline; `face` and `spread` keep a narrow ridge (nose,
-  // lips, chin) standing out from a flatter front.
-  function loft(poly, halfWidth, o = {}) {
-    const rows = o.rows || 56, ring = o.ring || 48, inner = o.side ? 10 : 0;
-    const nFront = o.nFront || 2, nBack = o.nBack || 2, gap = o.gap || 0;
-    let top = Infinity, bottom = -Infinity;
-    for (const p of poly) { top = Math.min(top, p[1]); bottom = Math.max(bottom, p[1]); }
-    bottom = Math.min(bottom, o.yMax === undefined ? bottom : o.yMax);
-    const span = (y) => {
-      let a = Infinity, b = -Infinity;
-      for (let i = 0; i < poly.length; i++) {
-        const p = poly[i], q = poly[(i + 1) % poly.length];
-        if ((p[1] - y) * (q[1] - y) > 0 || p[1] === q[1]) continue;
-        const x = p[0] + ((y - p[1]) / (q[1] - p[1])) * (q[0] - p[0]);
-        a = Math.min(a, x); b = Math.max(b, x);
-      }
-      return [a, b];
-    };
-    const oval = (c, n) => Math.sign(c) * Math.abs(c) ** (2 / n);
-    const positions = [];
-    const perRow = ring + inner;
-    for (let r = 0; r < rows; r++) {
-      const t = r / (rows - 1);
-      const eased = o.openBottom ? 1 - Math.cos((t * Math.PI) / 2) : (1 - Math.cos(t * Math.PI)) / 2;
-      const y = top + 0.5 + (bottom - top - 1) * eased;
-      let [front, back] = span(y);
-      if (!isFinite(front)) { front = back = poly[0][0]; }
-      const ridge = o.face ? Math.max(0, o.face(y) - front) : 0;
-      if (o.face) front = Math.max(front, Math.min(o.face(y), back - 1));
-      // The first and last rows shrink to a point, so the solid is closed.
-      const closed = r === 0 || (r === rows - 1 && !o.openBottom) ? 0.02 : 1;
-      const xc = (front + back) / 2, rx = ((back - front) / 2) * closed, w = Math.max(halfWidth(y), 0.5) * closed;
-      for (let k = 0; k < ring; k++) {
-        const angle = o.side ? (Math.PI * k) / (ring - 1) : (2 * Math.PI * k) / ring;
-        const c = Math.cos(angle), s = Math.sin(angle), n = c > 0 ? nFront : nBack;
-        let x = xc - rx * oval(c, n);
-        const z = o.side ? o.side * (gap + (w - gap) * Math.abs(s) ** (2 / n)) : w * oval(s, n);
-        if (ridge && c > 0) x -= ridge * Math.exp(-((z / o.spread(y)) ** 2)) * Math.min(1, c * 3);
-        positions.push(x - A.pivot[0], A.pivot[1] - y, z);
-      }
-      for (let k = 0; k < inner; k++) {             // flat inner face, back to front
-        const x = xc + rx - (2 * rx * (k + 1)) / (inner + 1);
-        positions.push(x - A.pivot[0], A.pivot[1] - y, o.side * gap);
-      }
-    }
-    const index = [];
-    for (let r = 0; r < rows - 1; r++) for (let k = 0; k < perRow; k++) {
-      const a = r * perRow + k, b = r * perRow + ((k + 1) % perRow), c = a + perRow, d = b + perRow;
-      index.push(a, c, b, b, c, d);
-    }
+  // Unpack one mesh of the anatomy file. Positions are stored as 16-bit steps
+  // inside the mesh's own box; `tag` and `value` are one byte per point.
+  function unpack(m) {
+    const packed = new Uint16Array(bytes(m.positions).buffer), position = new Float32Array(packed.length);
+    for (let i = 0; i < packed.length; i++) position[i] = m.low[i % 3] + ((m.high[i % 3] - m.low[i % 3]) * packed[i]) / 65535;
     const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setIndex(index);
+    geometry.setAttribute("position", new THREE.BufferAttribute(position, 3));
+    const faces = bytes(m.faces).buffer;
+    geometry.setIndex(new THREE.BufferAttribute(m.wide ? new Uint32Array(faces) : new Uint16Array(faces), 1));
+    geometry.setAttribute("tag", new THREE.BufferAttribute(m.tag ? Float32Array.from(bytes(m.tag)) : new Float32Array(m.points), 1));
+    geometry.setAttribute("value", new THREE.BufferAttribute(m.value ? Float32Array.from(bytes(m.value), (v) => (v * m.valueMax) / 255) : new Float32Array(m.points), 1));
     geometry.computeVertexNormals();
-    // How far the surface stands out from the midline at a point of the outline.
-    geometry.userData.reach = (x, y) => {
-      const [front, back] = span(clamp(y, top + 1, bottom - 1));
-      if (!isFinite(front)) return gap;
-      const xc = (front + back) / 2, rx = Math.max(1, (back - front) / 2);
-      const u = clamp((x - xc) / rx, -0.97, 0.97), n = u < 0 ? nFront : nBack;
-      return gap + (Math.max(halfWidth(y), 0.5) - gap) * (1 - Math.abs(u) ** n) ** (1 / n);
-    };
-    return geometry;
-  }
-
-  // A tube along a path whose radius can change along its length.
-  function tube(points, radii, sides = 8) {
-    const n = points.length, positions = new Float32Array(n * sides * 3), index = [];
-    const frames = points.map((p, i) => {
-      const t = points[Math.min(n - 1, i + 1)].clone().sub(points[Math.max(0, i - 1)]).normalize();
-      const ref = Math.abs(t.z) > 0.9 ? new V3(1, 0, 0) : new V3(0, 0, 1);
-      const u = new V3().crossVectors(t, ref).normalize();
-      return [u, new V3().crossVectors(t, u)];
-    });
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    for (let i = 0; i < n - 1; i++) for (let k = 0; k < sides; k++) {
-      const a = i * sides + k, b = i * sides + ((k + 1) % sides);
-      index.push(a, b, a + sides, b, b + sides, a + sides);
-    }
-    geometry.setIndex(index);
-    geometry.userData.shape = (r) => {
-      for (let i = 0; i < n; i++) for (let k = 0; k < sides; k++) {
-        const angle = (2 * Math.PI * k) / sides, [u, v] = frames[i], p = points[i];
-        const cu = Math.cos(angle) * r[i], cv = Math.sin(angle) * r[i], j = (i * sides + k) * 3;
-        positions[j] = p.x + u.x * cu + v.x * cv; positions[j + 1] = p.y + u.y * cu + v.y * cv; positions[j + 2] = p.z + u.z * cu + v.z * cv;
-      }
-      geometry.attributes.position.needsUpdate = true;
-      geometry.computeVertexNormals();
-    };
-    geometry.userData.shape(radii);
     return geometry;
   }
 
   // ---- materials -------------------------------------------------------------
-  // Glass-like shell: nearly clear face-on, bright where it turns edge-on.
-  const VIEW_VERTEX = `
-    varying vec3 vNormal; varying vec3 vView; varying vec3 vPlace; varying vec3 vOut;
+  const FLOOR = D.meshes.skin.low[1];                 // the cut at the bottom of the neck; everything fades out toward it
+  const VERTEX = `
+    attribute float tag; attribute float value;
+    varying vec3 vNormal; varying vec3 vView; varying vec3 vPlace; varying float vTag; varying float vValue;
     void main() {
       vec4 eye = modelViewMatrix * vec4(position, 1.0);
-      vNormal = normalMatrix * normal; vView = -eye.xyz; vPlace = position; vOut = normal;
+      vNormal = normalMatrix * normal; vView = -eye.xyz; vPlace = position; vTag = tag; vValue = value;
       gl_Position = projectionMatrix * eye;
     }`;
-  const shell = (color, base, gain, power) => new THREE.ShaderMaterial({
-    uniforms: { uColor: { value: new THREE.Color(color) }, uBase: { value: base }, uGain: { value: gain }, uPower: { value: power } },
-    vertexShader: VIEW_VERTEX,
+  const LIGHT = `
+    const vec3 KEY = vec3(-0.42, 0.62, 0.66), FILL = vec3(0.62, 0.1, 0.5);      // fixed to the viewer, not to the head
+    float fadeOut(float y) { return smoothstep(${FLOOR.toFixed(1)}, ${(FLOOR + 70).toFixed(1)}, y); }`;
+  // A see-through layer (skin, bone): faint where you look straight at it,
+  // stronger where it turns away, so the outline reads and the inside shows.
+  // Each layer is drawn twice: first only its depth, so that just its nearest
+  // surface is coloured and the layer does not pile up on itself.
+  const ghost = (color, faceOn, edgeOn, power, glow) => new THREE.ShaderMaterial({
+    uniforms: { uColor: { value: new THREE.Color(color) }, uFace: { value: faceOn }, uEdge: { value: edgeOn }, uPower: { value: power }, uGlow: { value: glow } },
+    vertexShader: VERTEX,
     fragmentShader: `
-      uniform vec3 uColor; uniform float uBase, uGain, uPower; varying vec3 vNormal; varying vec3 vView; varying vec3 vOut;
-      void main() {
-        float edge = 1.0 - abs(dot(normalize(vNormal), normalize(vView)));
-        float level = 1.0 - 0.8 * pow(abs(normalize(vOut).y), 3.0);     // flat floors and ceilings are toned down
-        gl_FragColor = vec4(uColor * (uBase + uGain * pow(edge, uPower)) * level, 1.0);
-      }`,
-    blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, side: THREE.DoubleSide,
-  });
-  const SKIN = shell(0x9cc8ee, 0.012, 0.42, 2.8), BONE = shell(0xd2e6f8, 0.02, 0.34, 2.4), DENSE = shell(0xe4f0fb, 0.07, 0.32, 1.5);
-  // Solid, softly lit surface for things that must hide what is behind them.
-  const solid = (color, side = THREE.DoubleSide) => new THREE.ShaderMaterial({
-    uniforms: { uColor: { value: new THREE.Color(color) } },
-    vertexShader: VIEW_VERTEX,
-    fragmentShader: `
-      uniform vec3 uColor; varying vec3 vNormal; varying vec3 vView;
-      void main() {
-        float facing = abs(dot(normalize(vNormal), normalize(vView)));
-        gl_FragColor = vec4(uColor * (0.4 + 0.8 * facing), 1.0);
-      }`,
-    side,
-  });
-  // Brain tissue: the colour is set from the model. The folds of the cerebrum
-  // come from the film view's own drawing of them, laid on from three sides.
-  const foldMap = new THREE.CanvasTexture(A.folds.canvas);
-  foldMap.wrapS = foldMap.wrapT = THREE.MirroredRepeatWrapping; foldMap.anisotropy = 4;
-  const tissue = (kind) => new THREE.ShaderMaterial({
-    uniforms: {
-      uFront: { value: new THREE.Color() }, uBack: { value: new THREE.Color() }, uMap: { value: foldMap },
-      uBox: { value: new THREE.Vector3(A.folds.x - A.pivot[0], A.pivot[1] - A.folds.y, A.folds.size) },
-      uBlend: { value: new THREE.Vector2(A.zoneBlend[0] - A.pivot[0], A.zoneBlend[1] - A.pivot[0]) }, uKind: { value: kind },
-    },
-    vertexShader: `
-      varying vec3 vNormal; varying vec3 vView; varying vec3 vPlace; varying vec3 vOut;
-      void main() {
-        vec4 eye = modelViewMatrix * vec4(position, 1.0);
-        vNormal = normalMatrix * normal; vView = -eye.xyz; vPlace = position; vOut = normal;
-        gl_Position = projectionMatrix * eye;
-      }`,
-    fragmentShader: `
-      uniform vec3 uFront, uBack, uBox; uniform vec2 uBlend; uniform float uKind; uniform sampler2D uMap;
-      varying vec3 vNormal; varying vec3 vView; varying vec3 vPlace; varying vec3 vOut;
-      float hash(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
-      float noise(vec3 p) {
-        vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
-        return mix(mix(mix(hash(i), hash(i + vec3(1, 0, 0)), f.x), mix(hash(i + vec3(0, 1, 0)), hash(i + vec3(1, 1, 0)), f.x), f.y),
-                   mix(mix(hash(i + vec3(0, 0, 1)), hash(i + vec3(1, 0, 1)), f.x), mix(hash(i + vec3(0, 1, 1)), hash(i + vec3(1, 1, 1)), f.x), f.y), f.z);
-      }
-      // The fold drawing, looked up by a point given in the drawing's own plane.
-      vec2 sample2(vec2 at) {
-        vec2 uv = vec2((at.x - uBox.x) / uBox.z, 1.0 - (uBox.y - at.y) / uBox.z);
-        float h = texture2D(uMap, uv).r;
-        float tilt = texture2D(uMap, uv + vec2(-0.004, 0.004)).r - texture2D(uMap, uv + vec2(0.004, -0.004)).r;
-        return vec2(h, tilt);
-      }
+      uniform vec3 uColor; uniform float uFace, uEdge, uPower, uGlow;
+      varying vec3 vNormal; varying vec3 vView; varying vec3 vPlace;
+      ${LIGHT}
       void main() {
         vec3 n = normalize(vNormal), v = normalize(vView);
         if (dot(n, v) < 0.0) n = -n;
-        float h = 1.0, tilt = 0.0;
-        if (uKind < 0.5) {
-          vec3 w = pow(abs(normalize(vOut)), vec3(6.0)); w /= (w.x + w.y + w.z);
-          vec2 f = w.z * sample2(vPlace.xy) + w.y * sample2(vec2(vPlace.x, 200.0 - abs(vPlace.z))) + w.x * sample2(vec2(30.0 + vPlace.z, vPlace.y));
-          h = f.x; tilt = f.y;
-        } else if (uKind < 1.5) {
-          h = smoothstep(0.0, 0.6, abs(sin(vPlace.y * 0.62 + 3.0 * noise(vPlace * 0.02))));       // cerebellum: fine leaves
-        }
-        float lit = 0.36 + 0.64 * max(dot(n, normalize(vec3(-0.45, 0.6, 0.66))), 0.0);
-        float rim = pow(1.0 - max(dot(n, v), 0.0), 2.5);
-        vec3 colour = uKind > 0.5 ? uBack : mix(uFront, uBack, smoothstep(uBlend.x, uBlend.y, vPlace.x));
-        gl_FragColor = vec4(colour * lit * (0.34 + 0.66 * h) * (1.0 + 1.6 * tilt) + colour * rim * 0.22, 1.0);
+        float edge = pow(1.0 - dot(n, v), uPower);
+        float lit = 0.55 + 0.45 * max(dot(n, normalize(KEY)), 0.0) + 0.15 * max(dot(n, normalize(FILL)), 0.0);
+        gl_FragColor = vec4(uColor * (lit + uGlow * edge), (uFace + (uEdge - uFace) * edge) * fadeOut(vPlace.y));
       }`,
-    side: THREE.DoubleSide,
+    transparent: true, depthWrite: false, depthFunc: THREE.LessEqualDepth, side: THREE.DoubleSide,
+  });
+  const DEPTH_ONLY = new THREE.MeshBasicMaterial({ colorWrite: false, side: THREE.DoubleSide, transparent: true });
+  // Brain tissue. Its colour is set from the model: `tag` says which of the two
+  // zones a point belongs to, and `value` is how deep it sits in a fold.
+  const TISSUE = new THREE.ShaderMaterial({
+    uniforms: { uFront: { value: new THREE.Color() }, uBack: { value: new THREE.Color() }, uFolds: { value: 1 }, uLeaves: { value: 0 }, uFan: { value: new THREE.Vector2() } },
+    vertexShader: VERTEX,
+    fragmentShader: `
+      uniform vec3 uFront, uBack; uniform float uFolds, uLeaves; uniform vec2 uFan;
+      varying vec3 vNormal; varying vec3 vView; varying vec3 vPlace; varying float vTag; varying float vValue;
+      ${LIGHT}
+      void main() {
+        vec3 n = normalize(vNormal), v = normalize(vView);
+        if (dot(n, v) < 0.0) n = -n;
+        float open = 1.0 - uFolds * smoothstep(1.5, 13.0, vValue);                 // 1 on the crowns, 0 deep in a fold
+        if (uLeaves > 0.5) {                                                       // cerebellum: thin leaves, drawn as a pattern
+          float turn = atan(vPlace.y - uFan.y, vPlace.x - uFan.x);
+          open *= 0.38 + 0.62 * smoothstep(0.0, 0.55, abs(sin(turn * 52.0)));
+        }
+        float key = max(dot(n, normalize(KEY)), 0.0), fill = max(dot(n, normalize(FILL)), 0.0);
+        float lit = (0.26 + 0.66 * key + 0.16 * fill) * (0.22 + 0.78 * open);
+        float rim = pow(1.0 - max(dot(n, v), 0.0), 3.0);
+        float shine = pow(max(dot(n, normalize(normalize(KEY) + v)), 0.0), 36.0) * open;   // a wet highlight
+        vec3 colour = mix(uFront, uBack, step(0.5, mod(vTag, 2.0)));
+        gl_FragColor = vec4(colour * lit + colour * rim * 0.22 + vec3(0.22) * shine * dot(colour, vec3(0.5)), 1.0);
+      }`,
+  });
+  const tissue = (folds, leaves = 0) => { const m = TISSUE.clone(); m.uniforms.uFolds.value = folds; m.uniforms.uLeaves.value = leaves; return m; };
+  // Arteries. `tag` carries the zone (front or back) and marks the two carotid
+  // trunks; `value` is the distance along the artery from the neck, used to
+  // draw pulses that travel upward at a speed set by the model's flow.
+  const P = D.anchors.pinch;
+  const VESSEL = new THREE.ShaderMaterial({
+    uniforms: {
+      uDim: { value: [new THREE.Color(), new THREE.Color()] }, uBright: { value: [new THREE.Color(), new THREE.Color()] },
+      uPhase: { value: new THREE.Vector2() }, uPulse: { value: new THREE.Vector2() }, uSqueeze: { value: 0 },
+      uPinchLeft: { value: new V3(...P.left) }, uPinchRight: { value: new V3(...P.right) },
+    },
+    vertexShader: `
+      attribute float tag; attribute float value;
+      uniform float uSqueeze; uniform vec3 uPinchLeft, uPinchRight;
+      varying vec3 vNormal; varying vec3 vView; varying vec3 vPlace; varying float vZone; varying float vValue;
+      void main() {
+        vec3 p = position;
+        float trunk = floor(tag / 2.0 + 0.25);                                     // 0 none, 1 left carotid, 2 right carotid
+        if (trunk > 0.5) {                                                         // squeeze the trunk toward its middle
+          vec3 c = trunk < 1.5 ? uPinchLeft : uPinchRight;
+          float k = 0.88 * uSqueeze * exp(-pow((p.y - c.y) / 13.0, 2.0));
+          p.xz = mix(p.xz, c.xz, k);
+        }
+        vec4 eye = modelViewMatrix * vec4(p, 1.0);
+        vNormal = normalMatrix * normal; vView = -eye.xyz; vPlace = p; vZone = mod(tag, 2.0); vValue = value;
+        gl_Position = projectionMatrix * eye;
+      }`,
+    fragmentShader: `
+      uniform vec3 uDim[2]; uniform vec3 uBright[2]; uniform vec2 uPhase, uPulse;
+      varying vec3 vNormal; varying vec3 vView; varying vec3 vPlace; varying float vZone; varying float vValue;
+      ${LIGHT}
+      void main() {
+        vec3 n = normalize(vNormal), v = normalize(vView);
+        if (dot(n, v) < 0.0) n = -n;
+        bool back = vZone > 0.5;
+        float wave = fract((vValue - (back ? uPhase.y : uPhase.x)) / 46.0);
+        float pulse = smoothstep(0.0, 0.12, wave) * (1.0 - smoothstep(0.12, 0.55, wave)) * (back ? uPulse.y : uPulse.x);
+        vec3 base = back ? uDim[1] : uDim[0], bright = back ? uBright[1] : uBright[0];
+        float lit = 0.42 + 0.62 * max(dot(n, normalize(KEY)), 0.0) + 0.2 * max(dot(n, normalize(FILL)), 0.0);
+        float shine = pow(max(dot(n, normalize(normalize(KEY) + v)), 0.0), 24.0);
+        gl_FragColor = vec4((mix(base, bright, pulse) * lit + vec3(0.3) * shine * dot(base, vec3(0.6))) * fadeOut(vPlace.y), 1.0);
+      }`,
+  });
+  const flat = (color) => new THREE.MeshBasicMaterial({ color });
+  const lit = (color) => new THREE.ShaderMaterial({                  // a plain shaded solid (eyeball, eyelids)
+    uniforms: { uColor: { value: new THREE.Color(color) } }, vertexShader: VERTEX,
+    fragmentShader: `uniform vec3 uColor; varying vec3 vNormal; varying vec3 vView; ${LIGHT}
+      void main() { vec3 n = normalize(vNormal); gl_FragColor = vec4(uColor * (0.5 + 0.6 * max(dot(n, normalize(KEY)), 0.0) + 0.2 * max(dot(n, normalize(FILL)), 0.0)), 1.0); }`,
   });
 
   // ---- scene ------------------------------------------------------------------
@@ -741,193 +672,70 @@ function buildHead3D(THREE, host, A) {
   host.appendChild(renderer.domElement);
   const scene = new THREE.Scene(), model = new THREE.Group();
   scene.add(model);
-  const camera = new THREE.PerspectiveCamera(30, A.size[0] / A.size[1], 200, 6000);
-  camera.position.set(0, 0, (A.size[1] / 2) / Math.tan((15 * Math.PI) / 180));
-  const add = (geometry, material, order = 0) => { const m = new THREE.Mesh(geometry, material); m.renderOrder = order; model.add(m); return m; };
-  const place = (mesh, x, y, z) => { mesh.position.copy(at(x, y, z)); return mesh; };
+  const TALL = 800;                                    // how much of the scene, top to bottom, the view shows
+  const camera = new THREE.PerspectiveCamera(26, A.size[0] / A.size[1], 400, 6000);
+  camera.position.set(0, -10, (TALL / 2) / Math.tan((13 * Math.PI) / 180));
+  camera.lookAt(0, -10, 0);
+  const add = (geometry, material, order) => { const m = new THREE.Mesh(geometry, material); m.renderOrder = order; model.add(m); return m; };
+  const layer = (geometry, material, order) => { add(geometry, DEPTH_ONLY, order); add(geometry, material, order + 1); };
 
-  // Skin. The face is a flatter front with the nose, lips and chin standing out as a ridge.
-  const faceLine = table([[396, 240], [430, 245], [470, 243], [510, 237], [535, 229], [560, 223], [585, 221], [610, 222], [640, 225], [675, 233], [692, 250]]);
-  const ridgeSpread = table([[400, 13], [500, 24], [526, 30], [540, 46], [600, 48], [640, 54], [690, 60]]);
-  const headWide = (y) => (y < 300 ? dome(A.top.head, 300, 178)(y)
-    : table([[300, 178], [380, 175], [440, 163], [500, 148], [570, 132], [640, 122], [700, 118], [800, 122], [905, 150]])(y));
-  add(loft(A.head, headWide, { rows: 90, ring: 64, yMax: 905, openBottom: true, nFront: 2.5, nBack: 2.2, face: (y) => (y > 396 && y < 692 ? faceLine(y) : -1e9), spread: ridgeSpread }), SKIN, 5);
-  for (const side of [-1, 1]) {                       // outer ears
-    const ear = add(new THREE.TorusGeometry(26, 7, 8, 28), SKIN, 5);
-    place(ear, 478, 468, side * (headWide(468) + 3));
-    ear.scale.set(0.72, 1.3, 0.3); ear.rotation.set(0, side * -0.25, 0.12);
-  }
+  // Solid things first: brain, arteries, eyes. Then bone and skin over them.
+  const cortex = tissue(1), stem = tissue(0), leafy = tissue(0, 1), tissues = [cortex, stem, leafy];
+  add(unpack(D.meshes.cortex), cortex, 1);
+  add(unpack(D.meshes.whiteMatter), cortex, 1);
+  add(unpack(D.meshes.brainstem), stem, 1);
+  // The cerebellum's leaves are a pattern fanned out from a point just in front of it, not real folds.
+  const lobe = D.meshes.cerebellum;
+  leafy.uniforms.uFan.value.set(lobe.low[0] - 30, (lobe.low[1] + lobe.high[1]) / 2 + 12);
+  add(unpack(lobe), leafy, 1);
+  add(unpack(D.meshes.arteries), VESSEL, 2);
+  const BONE = ghost(0xdfe9f2, 0.1, 0.72, 1.6, 0.25), TOOTH = ghost(0xf2f6fa, 0.5, 0.9, 1.4, 0.15), SKIN = ghost(0x8fb9dc, 0.035, 0.6, 2.4, 0.5);
+  for (const name of ["skull", "mandible", "spine"]) layer(unpack(D.meshes[name]), BONE, 10);
+  layer(unpack(D.meshes.teeth), TOOTH, 12);
+  layer(unpack(D.meshes.skin), SKIN, 20);
 
-  // Bone: skull, face, jaw, teeth, neck bones.
-  const skullWide = (y) => (y < 300 ? dome(A.top.skull, 300, 165)(y) : table([[300, 165], [400, 160], [450, 148], [500, 128], [540, 96], [568, 50]])(y));
-  add(loft(A.vault, skullWide, { rows: 64, ring: 56, nFront: 2.3, nBack: 2.2 }), BONE, 4);
-  add(loft(A.face, table([[394, 96], [420, 140], [450, 152], [480, 150], [500, 118], [530, 84], [549, 70]]), { rows: 34, ring: 40, nFront: 2.6, nBack: 2 }), BONE, 4);
-  for (const side of [-1, 1]) {                       // rims of the eye sockets
-    const rim = add(new THREE.TorusGeometry(31, 1.3, 8, 32), BONE, 4);
-    place(rim, 262, 431, side * 76); rim.rotation.y = Math.PI / 2 + side * 0.32; rim.scale.y = 0.95;
-  }
-  // The jaw: the side outline used twice, bent so the two halves meet at the chin.
-  const jawWide = (x) => 118 * clamp((x - 214) / 190, 0, 1) ** 0.62;
-  const jawShape = new THREE.Shape(A.mandible.map((p) => new THREE.Vector2(p[0], p[1])));
-  for (const side of [-1, 1]) {
-    const jaw = new THREE.ExtrudeGeometry(jawShape, { depth: 9, bevelEnabled: false, curveSegments: 1 });
-    const p = jaw.attributes.position;
-    for (let i = 0; i < p.count; i++) {
-      const x = p.getX(i), y = p.getY(i), inset = p.getZ(i);
-      p.setXYZ(i, x - A.pivot[0], A.pivot[1] - y, side * Math.max(0, jawWide(x) - inset));
-    }
-    jaw.computeVertexNormals();
-    add(jaw, BONE, 4);
-  }
-  // Teeth: small rounded crowns set side by side along the curve of each dental arch.
-  const archWide = (x) => 58 * clamp((x - 226) / 104, 0, 1) ** 0.5;
-  const arch = []; let archLength = 0;
-  for (let x = 226.5; x <= 331; x += 1.5) {
-    const z = archWide(x);
-    if (arch.length) archLength += Math.hypot(x - arch[arch.length - 1].x, z - arch[arch.length - 1].z);
-    arch.push({ x, z, s: archLength });
-  }
-  const widths = A.teeth.map((t) => t.w), share = archLength / widths.reduce((a, b) => a + b, 0);
-  let along = 0;
-  A.teeth.forEach((t, k) => {
-    const mid = along + (widths[k] * share) / 2; along += widths[k] * share;
-    const i = Math.max(1, arch.findIndex((a) => a.s >= mid)), a = arch[i - 1], b = arch[i];
-    for (const side of [-1, 1]) for (const up of [-1, 1]) {
-      const tooth = add(new THREE.CylinderGeometry(up > 0 ? 0.5 : 0.38, up > 0 ? 0.38 : 0.5, 1, 12), DENSE, 4);   // widest at the biting edge
-      tooth.scale.set(widths[k] * share - 0.8, t.crown - 1.5, 7.5);
-      place(tooth, b.x + (up > 0 ? 2 : 0), 568 + up * (t.crown / 2), side * b.z);
-      tooth.rotation.y = -side * Math.atan2(b.z - a.z, b.x - a.x);
-    }
-  });
-  for (const v of A.spine) {
-    const bone = new THREE.Group();
-    bone.position.copy(at(v.x, v.y)); bone.rotation.z = -v.angle; model.add(bone);
-    const part = (geometry, x, y, z) => { const m = new THREE.Mesh(geometry, BONE); m.position.set(x, y, z); m.renderOrder = 4; bone.add(m); return m; };
-    part(new THREE.CylinderGeometry(v.w / 2, v.w / 2, v.h, 20), 0, 0, 0).scale.z = 1.25;
-    part(new THREE.TorusGeometry(19, 4.5, 6, 20), v.w / 2 + 22, 0, 0).rotation.x = Math.PI / 2;
-    const spine = part(new THREE.BoxGeometry(v.spinous, 9, 7), v.w / 2 + 40 + v.spinous / 2, -8, 0); spine.rotation.z = -0.22;
-    for (const side of [-1, 1]) part(new THREE.BoxGeometry(14, 8, 24), 16, 0, side * 38);
-  }
-  const path = (poly, z = 0) => poly.filter((_, i) => i % 3 === 0 || i === poly.length - 1).map((p) => at(p[0], p[1], z));
-  const windpipe = path(A.airway);
-  add(tube(windpipe, windpipe.map(() => 11), 12), shell(0x86b4dc, 0.0, 0.3, 2.0), 5);
-
-  // Brain: two halves of the cerebrum, the cerebellum, the brainstem and the cord.
-  const brainWide = (y) => (y < 330 ? dome(A.top.brain, 330, 146)(y) : table([[330, 146], [420, 140], [460, 118], [488, 66]])(y));
-  const CEREBRUM = tissue(0), CEREBELLUM = tissue(1), STEM = tissue(2);
-  const halves = [-1, 1].map((side) => loft(A.cerebrum, brainWide, { rows: 72, ring: 44, side, gap: 5, nFront: 2.3, nBack: 2.3 }));
-  for (const half of halves) add(half, CEREBRUM, 1);
-  const lowerWide = (y) => 112 * Math.sqrt(Math.max(0, 1 - ((y - 497) / 47) ** 2));
-  const lower = add(loft(A.cerebellum, lowerWide, { rows: 32, ring: 40, nFront: 2.2, nBack: 2.2 }), CEREBELLUM, 1).geometry;
-  const stem = path(A.stem);
-  add(tube(stem, stem.map((_, i) => 21 - 9 * (i / (stem.length - 1)) ** 2), 14), STEM, 1);
-  const cord = path(A.cord);
-  add(tube(cord, cord.map(() => 9), 10), shell(0x9cc8ee, 0.06, 0.4, 1.6), 5);
-
-  // ---- arteries, on both sides -----------------------------------------------
-  const brainReach = (x, y) => halves[1].userData.reach(x, y);
-  const lowerReach = (x, y) => lower.userData.reach(x, y);
-  const carotidOut = table([[436, 20], [470, 28], [500, 40], [540, 56], [590, 66], [700, 74], [905, 78]]);
-  const vertebralOut = table([[532, 0], [556, 12], [580, 26], [640, 30], [905, 32]]);
-  // Depth of one artery point, by the artery's role. `s` is the distance along it.
-  function depth(role, x, y, s) {
-    const ease = (len) => { const t = clamp(s / len, 0, 1); return t * t * (3 - 2 * t); };
-    if (role === "carotid") return carotidOut(y);
-    if (role === "vertebral") return vertebralOut(y);
-    if (role === "inner") return 20 + (2 - 20) * ease(40);                       // runs between the two halves
-    if (role === "innerBranch") return 2 + (brainReach(x, y) + 2.5 - 2) * ease(45);
-    if (role === "outer") return 20 + (brainReach(x, y) + 2.5 - 20) * ease(60);  // comes out through the side fissure
-    if (role === "rear") return (brainReach(x, y) + 2.5) * ease(70);
-    if (role === "lower") return (lowerReach(x, y) + 2.5) * ease(60);
-    return brainReach(x, y) + 2.5;                                               // "surface"
-  }
-  const VESSEL = (zone) => new THREE.ShaderMaterial({
-    uniforms: { uColor: { value: new THREE.Color() } }, vertexShader: VIEW_VERTEX,
-    fragmentShader: `uniform vec3 uColor; varying vec3 vNormal; varying vec3 vView;
-      void main() { float f = abs(dot(normalize(vNormal), normalize(vView))); gl_FragColor = vec4(uColor * (0.5 + 0.7 * f), 1.0); }`,
-    side: THREE.DoubleSide, name: zone,
-  });
-  const vesselPaint = { front: VESSEL("front"), back: VESSEL("back") };
-  const twigPaint = { front: new THREE.LineBasicMaterial({ transparent: true }), back: new THREE.LineBasicMaterial({ transparent: true }) };
-  const dotPaint = {}, dotCloud = {};
-  const round = document.createElement("canvas"); round.width = round.height = 32;      // a soft round dot
-  const disc = round.getContext("2d"), glow = disc.createRadialGradient(16, 16, 0, 16, 16, 16);
-  glow.addColorStop(0, "rgba(255,255,255,1)"); glow.addColorStop(0.55, "rgba(255,255,255,0.9)"); glow.addColorStop(1, "rgba(255,255,255,0)");
-  disc.fillStyle = glow; disc.fillRect(0, 0, 32, 32);
-  const dotMap = new THREE.CanvasTexture(round);
-  const runs = [];                                   // one entry per artery per side
-  const trunks = [];
-  A.vessels.forEach((v, index) => {
-    for (const side of [-1, 1]) {
-      if (side < 0 && v.role === "vertebral") { /* the two join in the middle, so both are still drawn */ }
-      const keep = v.poly.map((_, i) => i).filter((i) => i % 2 === 0 || i === v.poly.length - 1);
-      const points = keep.map((i) => at(v.poly[i][0], v.poly[i][1], side * depth(v.role, v.poly[i][0], v.poly[i][1], v.d[i])));
-      const along = keep.map((i) => v.d[i]);
-      const radii = along.map((s) => v.widthAt(s) * 0.62);
-      const geometry = tube(points, radii, v.width > 5 ? 10 : 6);
-      add(geometry, vesselPaint[v.zone], 2);
-      const run = { v, points, along };
-      runs.push(run);
-      if (index === 0) trunks.push({ geometry, along, radii });
-    }
-  });
-  function pointOn(run, s, out) {
-    const d = run.along;
-    let lo = 0, hi = d.length - 1;
-    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (d[mid] <= s) lo = mid; else hi = mid; }
-    return out.lerpVectors(run.points[lo], run.points[hi], clamp((s - d[lo]) / (d[hi] - d[lo] || 1), 0, 1));
-  }
-  // Fine branches: the flat view's branches, laid on the surface of each half.
-  for (const zone of ["front", "back"]) {
-    const segments = [];
-    for (const side of [-1, 1]) for (const twig of A.twigs[zone]) {
-      const lifted = twig.map(([x, y]) => {
-        const reach = A.inCerebellum(x, y) ? lowerReach(x, y) + 1.6 : A.inCerebrum(x, y) ? brainReach(x, y) + 1.6 : 14;
-        return at(x, y, side * reach);
-      });
-      for (let i = 1; i < lifted.length; i++) segments.push(lifted[i - 1], lifted[i]);
-    }
-    const lines = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(segments), twigPaint[zone]);
-    lines.renderOrder = 2; model.add(lines);
-    const count = runs.filter((r) => r.v.zone === zone).reduce((n, r) => n + Math.ceil(r.v.length / A.spacing) + 1, 0);
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.BufferAttribute(new Float32Array(count * 3), 3));
-    dotPaint[zone] = new THREE.PointsMaterial({ size: 4, map: dotMap, sizeAttenuation: false, transparent: true, depthWrite: false });
-    dotCloud[zone] = new THREE.Points(geometry, dotPaint[zone]);
-    dotCloud[zone].renderOrder = 3; dotCloud[zone].frustumCulled = false; model.add(dotCloud[zone]);
-  }
   // Rings that close on each carotid where it is compressed.
-  const pinchAlong = A.pinchAlong, rings = [];
-  for (const side of [-1, 1]) {
-    const ring = add(new THREE.TorusGeometry(15, 2.2, 8, 28), new THREE.MeshBasicMaterial({ color: 0xe6f0fa }), 6);
-    place(ring, A.pinch.x, A.pinch.y, side * carotidOut(A.pinch.y)); ring.rotation.x = Math.PI / 2; ring.visible = false;
-    rings.push(ring);
-  }
+  const rings = ["left", "right"].map((side) => {
+    const ring = add(new THREE.TorusGeometry(15, 2, 8, 32), flat(0xeaf2fa), 3);
+    ring.position.set(...P[side]); ring.rotation.x = Math.PI / 2; ring.visible = false;
+    return ring;
+  });
 
   // ---- eyes -------------------------------------------------------------------
-  const lids = [];
-  for (const side of [-1, 1]) {
-    const eye = new THREE.Group(); eye.position.copy(at(277, 431, side * 76)); model.add(eye);
-    // Only the front of the eye is drawn: the white, the iris and the pupil.
-    const ball = new THREE.Mesh(new THREE.SphereGeometry(25, 28, 16, -1.25, 2.5, 0.35, 2.4), solid(0x7f93a6, THREE.FrontSide)); eye.add(ball);
-    const iris = new THREE.Mesh(new THREE.CircleGeometry(9.5, 28), new THREE.MeshBasicMaterial({ color: 0x2a5578 }));
-    iris.position.set(-25.3, 0, 0); iris.rotation.y = -Math.PI / 2; eye.add(iris);
-    const pupil = new THREE.Mesh(new THREE.CircleGeometry(4.4, 20), new THREE.MeshBasicMaterial({ color: 0x03070b }));
-    pupil.position.set(-25.6, 0, 0); pupil.rotation.y = -Math.PI / 2; eye.add(pupil);
-    // Each lid is a patch of a slightly larger sphere whose two poles are the
-    // corners of the eye, so the lids hinge there the way real ones do.
-    const patch = (from, to) => {
-      const g = new THREE.SphereGeometry(26.8, 16, 24, from, to - from, 0.2, Math.PI - 0.4); g.rotateX(Math.PI / 2);
-      return new THREE.Mesh(g, solid(0x3a556e, THREE.FrontSide));
+  // The eyeballs sit where the source model has them and look straight ahead.
+  // Each is a faint ball with a solid almond-shaped front: the white, the iris
+  // and the pupil. The white and both lids are slices of a sphere whose two
+  // poles are the corners of the eye, so the upper lid hinges there to shut.
+  const lids = [], OPEN = 0.33;                        // half the opening, as an angle seen from the middle of the eye
+  const BALL = ghost(0xcfe0ee, 0.1, 0.5, 1.6, 0.2), LID = lit(0x4d6a85);
+  for (const e of D.eyes) {
+    const eye = new THREE.Group(), r = e.radius; eye.position.set(...e.centre); model.add(eye);
+    const part = (geometry, material, order = 3) => { const m = new THREE.Mesh(geometry, material); m.renderOrder = order; eye.add(m); return m; };
+    const slice = (radius, from, to, material) => {
+      const g = new THREE.SphereGeometry(radius, 12, 24, from, to - from, 0.5, Math.PI - 1.0); g.rotateX(Math.PI / 2);
+      return part(g, material);
     };
-    const upper = patch(-1.35, -0.32), lower = patch(0.3, 1.3);
-    eye.add(upper); eye.add(lower); lids.push(upper);
+    part(new THREE.SphereGeometry(r, 32, 20), BALL, 13);
+    slice(r, -OPEN, OPEN, lit(0xbcc9d4));
+    const cap = (radius, angle, material) => {         // a round patch on the front of the ball
+      const g = new THREE.SphereGeometry(radius, 28, 6, 0, 2 * Math.PI, 0, angle); g.rotateZ(Math.PI / 2);
+      return part(g, material);
+    };
+    cap(r * 1.012, 0.4, lit(0x3a78ad)); cap(r * 1.024, 0.17, flat(0x03070b));
+    lids.push(slice(r * 1.06, -OPEN - 2 * OPEN - 0.1, -OPEN, LID)); slice(r * 1.06, OPEN, OPEN + 0.5, LID);
   }
 
   // ---- labels (drawn over the 3D view) ----------------------------------------
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("class", "overlay"); host.appendChild(svg);
-  const labels = A.labels.map((l) => {
+  const LABELS = [
+    { name: "front of the brain", short: "front", note: "carotid supply", at: D.anchors.frontOfBrain, out: 34, spot: [0.035, 0.17] },
+    { name: "back of the brain", short: "back", note: "vertebral supply", at: D.anchors.backOfBrain, out: 30, spot: [0.965, 0.66] },
+    { name: "carotid artery", short: "carotid", at: D.anchors.carotid, out: 0, spot: [0.035, 0.95] },
+    { name: "vertebral artery", short: "vertebral", at: D.anchors.vertebral, out: 0, spot: [0.965, 0.9] },
+    { name: "carotid arteries compressed", short: "compressed", at: P, out: 14, spot: [0.035, 0.85], when: "held" },
+  ];
+  const labels = LABELS.map((l) => {
     const line = document.createElementNS(svg.namespaceURI, "line"), dot = document.createElementNS(svg.namespaceURI, "circle");
     const text = document.createElementNS(svg.namespaceURI, "text"), sub = document.createElementNS(svg.namespaceURI, "text");
     dot.setAttribute("r", 2.4); sub.setAttribute("class", "sub");
@@ -937,7 +745,7 @@ function buildHead3D(THREE, host, A) {
   const tag = document.createElement("div"); tag.className = "tag3d"; host.appendChild(tag);
 
   // ---- turning the head ---------------------------------------------------------
-  let yaw = 0.55, pitch = 0.06, touched = false, dragging = null, width = 1, height = 1;
+  let yaw = 0.6, pitch = 0.05, touched = false, dragging = null, width = 1, height = 1;
   const canvas = renderer.domElement;
   canvas.addEventListener("pointerdown", (e) => { dragging = { x: e.clientX, y: e.clientY, mouse: e.pointerType === "mouse" }; touched = true; canvas.setPointerCapture(e.pointerId); });
   canvas.addEventListener("pointermove", (e) => {
@@ -960,52 +768,50 @@ function buildHead3D(THREE, host, A) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(width, height, false);
     svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-    for (const zone in dotPaint) dotPaint[zone].size = clamp((4 * width) / 740, 2.4, 4);       // smaller dots on a small screen
   }
 
-  const scratch = new V3(), colour = new THREE.Color();
-  const blend = (a, b, f) => colour.setRGB((a[0] + (b[0] - a[0]) * f) / 255, (a[1] + (b[1] - a[1]) * f) / 255, (a[2] + (b[2] - a[2]) * f) / 255);
-  let lastSqueeze = -1;
+  // Brain colour: warm when the zone has its normal oxygen, cold as it nears
+  // the model's threshold, dark below it.
+  const WARM = [236, 164, 150], COLD = [74, 98, 132], DARK = [30, 42, 60];
+  const blend = (a, b, f) => a.map((v, i) => (v + (b[i] - v) * f) / 255);
+  const tissueColour = (level, off) => (off ? blend(DARK, COLD, 0.35) : blend(COLD, WARM, level));
+  const scratch = new V3();
+  let lastSeconds = null;
+  const phase = { front: 0, back: 0 };
   // Draw one frame. `state` carries the model's numbers for this instant.
   function render(state, seconds) {
-    if (!touched && !state.still) yaw = 0.55 + 0.22 * Math.sin(seconds * 0.35);
+    const dt = lastSeconds === null ? 0 : clamp(seconds - lastSeconds, 0, 0.1);
+    lastSeconds = seconds;
+    if (!touched && !state.still) yaw = 0.6 + 0.22 * Math.sin(seconds * 0.35);
     model.rotation.set(pitch, yaw, 0, "XYZ");
-    CEREBRUM.uniforms.uFront.value.setRGB(...state.frontColour.map((c) => c / 255));
-    for (const m of [CEREBRUM, CEREBELLUM, STEM]) m.uniforms.uBack.value.setRGB(...state.backColour.map((c) => c / 255));
-    for (const zone of ["front", "back"]) {
+    const front = tissueColour(state.level.front, state.frontOff), back = tissueColour(state.level.back, state.backOff);
+    for (const m of tissues) { m.uniforms.uFront.value.setRGB(...(m === cortex ? front : back)); m.uniforms.uBack.value.setRGB(...back); }
+    ["front", "back"].forEach((zone, i) => {
       const f = state.flow[zone], strength = Math.pow(f, 0.6);
-      vesselPaint[zone].uniforms.uColor.value.copy(blend([88, 28, 38], [246, 58, 62], strength));
-      twigPaint[zone].color.copy(blend([74, 26, 38], [255, 86, 80], strength)); twigPaint[zone].opacity = 0.2 + 0.75 * f;
-      dotPaint[zone].color.setRGB(1, 0.91, 0.87); dotPaint[zone].opacity = 0.22 + 0.72 * f;
-      const p = dotCloud[zone].geometry.attributes.position;
-      let i = 0;
-      for (const run of runs) {
-        if (run.v.zone !== zone) continue;
-        for (let s = run.v.phase % A.spacing; s < run.v.length && i < p.count; s += A.spacing, i++) {
-          pointOn(run, s, scratch); p.setXYZ(i, scratch.x, scratch.y, scratch.z);
-        }
-      }
-      for (; i < p.count; i++) p.setXYZ(i, 0, -9999, 0);
-      p.needsUpdate = true;
-    }
-    if (state.squeeze !== lastSqueeze) {
-      lastSqueeze = state.squeeze;
-      for (const t of trunks) t.geometry.userData.shape(t.radii.map((r, i) => r * (1 - 0.86 * state.squeeze * Math.exp(-(((t.along[i] - pinchAlong) / 16) ** 2)))));
-      for (const ring of rings) { ring.visible = state.squeeze > 0; const k = 1 - 0.55 * state.squeeze; ring.scale.set(k, k, 1); }
-    }
-    for (const lid of lids) lid.rotation.z = (1 - state.eye) * 0.66;            // swings forward and down to shut
+      if (state.moving) phase[zone] += 150 * f * dt;
+      VESSEL.uniforms.uDim.value[i].setRGB(...blend([62, 40, 54], [196, 30, 40], strength));
+      VESSEL.uniforms.uBright.value[i].setRGB(...blend([84, 52, 66], [255, 150, 128], strength));
+    });
+    VESSEL.uniforms.uPhase.value.set(phase.front, phase.back);
+    VESSEL.uniforms.uPulse.value.set(Math.min(1, state.flow.front * 4), Math.min(1, state.flow.back * 4));
+    VESSEL.uniforms.uSqueeze.value = state.squeeze;
+    for (const ring of rings) { ring.visible = state.squeeze > 0; const k = 1 - 0.5 * state.squeeze; ring.scale.set(k, k, 1); }
+    for (const lid of lids) lid.rotation.z = (1 - state.eye) * 2 * OPEN;         // swings forward and down to shut
     renderer.render(scene, camera);
 
     // Labels: each has a fixed spot at the edge and a line to its place on the head.
-    const near = Math.cos(yaw) >= 0 ? 1 : -1;        // which side of the head faces the viewer
+    const near = Math.cos(yaw) >= 0 ? "left" : "right";          // which side of the head faces the viewer
     model.updateMatrixWorld();
+    const project = (p, out = 0) => {
+      scratch.set(p[0], p[1], p[2] + Math.sign(p[2]) * out).applyMatrix4(model.matrixWorld).project(camera);
+      return [(scratch.x * 0.5 + 0.5) * width, (-scratch.y * 0.5 + 0.5) * height];
+    };
     for (const l of labels) {
       const show = !l.when || state[l.when];
       for (const el of [l.line, l.dot, l.text, l.sub]) el.style.display = show ? "" : "none";
       if (!show) continue;
-      const anchor = at(l.at[0], l.at[1], (l.out || 0) * (l.mirror ? -near : near)).applyMatrix4(model.matrixWorld).project(camera);
-      const ax = (anchor.x * 0.5 + 0.5) * width, ay = (-anchor.y * 0.5 + 0.5) * height;
-      const sx = near > 0 ? l.spot[0] : 1 - l.spot[0];          // labels swap sides when the head faces the other way
+      const [ax, ay] = project(l.at[near], l.out);
+      const sx = near === "left" ? l.spot[0] : 1 - l.spot[0];   // labels swap sides when the head faces the other way
       const right = sx > 0.5, lx = sx * width, ly = l.spot[1] * height;
       l.line.setAttribute("x1", ax); l.line.setAttribute("y1", ay); l.line.setAttribute("x2", lx + (right ? -6 : 6)); l.line.setAttribute("y2", ly - 5);
       l.dot.setAttribute("cx", ax); l.dot.setAttribute("cy", ay);
@@ -1016,9 +822,9 @@ function buildHead3D(THREE, host, A) {
     }
     tag.style.display = state.frontOff ? "" : "none";
     if (state.frontOff) {
-      const p = at(A.tagAt[0], A.tagAt[1], 0).applyMatrix4(model.matrixWorld).project(camera);
+      const [x, y] = project(D.anchors.brainCentre);
       tag.textContent = width < 520 ? "below threshold" : "below the model's threshold";
-      tag.style.left = `${(p.x * 0.5 + 0.5) * 100}%`; tag.style.top = `${(-p.y * 0.5 + 0.5) * 100}%`;
+      tag.style.left = `${(x / width) * 100}%`; tag.style.top = `${(y / height) * 100}%`;
     }
   }
 
@@ -1986,32 +1792,12 @@ if (typeof module !== "undefined") module.exports = buildHead3D;
   }
 
   // ---- 3D view -------------------------------------------------------------
-  // Built from the same outlines as the film view. If three.js or WebGL is
-  // missing, the page falls back to the film view alone.
+  // Real anatomy shapes (see head3d.js). If three.js or WebGL is missing, the
+  // page falls back to the flat hand-drawn film view alone.
   let view3d = null, mode = "film";
-  const top = (poly) => Math.min(...poly.map((p) => p[1]));
   try {
     if (window.THREE && typeof buildHead3D === "function") {
-      let tx = 230;
-      view3d = buildHead3D(window.THREE, $("stage3d"), {
-        size: [VW, VH], pivot: [440, 500],
-        head: HEAD.poly, vault: VAULT.poly, face: FACE.poly, mandible: MANDIBLE.poly,
-        cerebrum: CEREBRUM_BASE, cerebellum: CEREBELLUM.poly,
-        stem: curve([[474, 446], [467, 480], [473, 512], [486, 542], [503, 580], [507, 602]], false),
-        cord: CORD, airway: AIRWAY, spine: SPINE,
-        teeth: TEETH.map(([w, crown]) => { const t = { x: tx + w / 2, w, crown }; tx += w + 1.4; return t; }),
-        top: { head: top(HEAD.poly), skull: top(VAULT.poly), brain: top(CEREBRUM_BASE) },
-        zoneBlend: [520, 615], folds: foldMap(), vessels: VESSELS, twigs: TWIGS.lines, spacing: SPACING,
-        inCerebrum: (x, y) => inside(CEREBRUM, x, y), inCerebellum: (x, y) => inside(CEREBELLUM, x, y),
-        pinch: PINCH, pinchAlong: PINCH_S, tagAt: warp([430, 300]),
-        labels: [
-          { name: "front of the brain", short: "front", note: "carotid supply", at: warp([312, 226]), out: 96, spot: [0.035, 0.2] },
-          { name: "back of the brain", short: "back", note: "vertebral supply", at: [612, 478], out: 70, spot: [0.965, 0.72] },
-          { name: "carotid artery", short: "carotid", at: [413, 838], out: 77, spot: [0.035, 0.95] },
-          { name: "vertebral artery", short: "vertebral", at: [486, 846], out: 31, spot: [0.965, 0.95] },
-          { name: "carotid arteries compressed", short: "compressed", at: [PINCH.x, PINCH.y], out: 76, spot: [0.035, 0.85], when: "held" },
-        ],
-      });
+      view3d = buildHead3D(window.THREE, $("stage3d"), { size: [VW, VH], anatomy: ANATOMY});
     }
   } catch (err) {
     console.warn("3D view unavailable, showing the film view instead.", err);
@@ -2021,18 +1807,17 @@ if (typeof module !== "undefined") module.exports = buildHead3D;
     mode = view3d ? next : "film";
     $("stage3d").hidden = mode !== "3d"; canvas.hidden = mode !== "film";
     $("views").hidden = !view3d; $("hint").hidden = mode !== "3d";
-    $("view-3d").setAttribute("aria-pressed", String(mode === "3d")); $("view-film").setAttribute("aria-pressed", String(mode === "film"));
     fit();
   }
-  $("view-3d").addEventListener("click", () => setMode("3d"));
-  $("view-film").addEventListener("click", () => setMode("film"));
 
   function draw3d(seconds) {
     const q = flows();
     const progress = phase === "held" ? Math.min(1, X.rampS > 0 ? (steps * DT) / X.rampS : 1) : 0;
+    const level = (c) => Math.max(0, Math.min(1, (c - X.threshold) / (1 - X.threshold)));
     view3d.render({
-      frontColour: tissue(front), backColour: tissue(back), flow: q, eye, still: reduceMotion,
-      squeeze: progress * (1 - scenario.frontFlow), held: progress > 0, frontOff: front < X.threshold,
+      level: { front: level(front), back: level(back) }, frontOff: front < X.threshold, backOff: back < X.threshold,
+      flow: q, eye, still: reduceMotion, moving: !reduceMotion || phase !== "idle",
+      squeeze: progress * (1 - scenario.frontFlow), held: progress > 0,
     }, seconds);
   }
   const paint = () => (mode === "3d" ? draw3d(performance.now() / 1000) : draw());
